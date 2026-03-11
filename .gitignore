@@ -1,0 +1,38 @@
+# =========================
+# OS & Editor Files
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+
+# =========================
+# Frontend (React / Vite)
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.local
+npm-debug.log*
+yarn-error.log*
+
+# =========================
+# Backend (C# .NET)
+# =========================
+backend/bin/
+backend/obj/
+# Ignore local development settings (keep appsettings.json, but ignore the dev one)
+backend/appsettings.Development.json 
+# Ignore any local SQLite databases just in case
+*.db
+*.db-journal
+
+# =========================
+# Docker
+# =========================
+# Ignore local environment variables for Docker
+.env
