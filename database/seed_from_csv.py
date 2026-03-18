@@ -45,6 +45,8 @@ MAX_PRODUCT_NAME = 50
 
 
 def parse_args():
+    # Hier definiëren we alle command line opties die je kunt meegeven
+    # als je dit script start in de terminal.
     p = argparse.ArgumentParser(
         description="Vul dt_website database met IKEA-productdata uit CSV"
     )
@@ -79,13 +81,17 @@ def extract_subcategory(short_description: str):
 
 def get_or_insert_category(cur, name, cache):
     """Geef category-id terug; voeg in als nog niet aanwezig."""
+    # 1) Eerst proberen uit lokale cache (sneller, minder database-calls).
     if name in cache:
         return cache[name]
+    # 2) Niet in cache? Dan in database zoeken.
     cur.execute('SELECT id FROM categories WHERE name = %s', (name,))
     row = cur.fetchone()
     if row:
+        # Gevonden: ook in cache zetten voor volgende producten.
         cache[name] = row[0]
         return row[0]
+    # 3) Nog steeds niet gevonden: nieuwe categorie aanmaken.
     cur.execute(
         'INSERT INTO categories (name, description) VALUES (%s, NULL) RETURNING id',
         (name,),
@@ -97,6 +103,8 @@ def get_or_insert_category(cur, name, cache):
 
 def get_or_insert_subcategory(cur, category_id, name, cache):
     """Geef subcategory-id terug; voeg in als nog niet aanwezig."""
+    # Subcategorie is afhankelijk van categorie, daarom gebruiken we
+    # (category_id, name) als unieke sleutel in de cache.
     key = (category_id, name)
     if key in cache:
         return cache[key]
@@ -117,13 +125,23 @@ def get_or_insert_subcategory(cur, category_id, name, cache):
     return sub_id
 
 
+def make_product_key(name, description, price, category_id, subcategory_id):
+    """Maak een vergelijkbare sleutel om dubbele producten te herkennen."""
+    # Prijs afronden op 2 decimalen zodat vergelijking past bij DECIMAL(10,2).
+    normalized_price = round(float(price), 2)
+    return (name, description, normalized_price, category_id, subcategory_id)
+
+
 def main():
+    # Lees alle argumenten die de gebruiker meegaf bij het starten.
     args = parse_args()
 
     if not CSV_FILE.exists():
         sys.exit(f"CSV-bestand niet gevonden: {CSV_FILE}")
 
     # --- CSV lezen ---
+    # We lezen eerst alle rijen in memory, zodat we daarna in één flow
+    # de database kunnen vullen.
     print(f"CSV lezen: {CSV_FILE.name} ...")
     rows = []
     with CSV_FILE.open(newline="", encoding="utf-8") as f:
@@ -133,6 +151,7 @@ def main():
     print(f"  {len(rows)} rijen geladen.")
 
     # --- Verbinding maken ---
+    # Open een verbinding met PostgreSQL op basis van de CLI-opties.
     print(f"Verbinding maken met {args.user}@{args.host}:{args.port}/{args.dbname} ...")
     try:
         conn = psycopg2.connect(
@@ -145,6 +164,8 @@ def main():
     except psycopg2.OperationalError as e:
         sys.exit(f"Verbinding mislukt: {e}")
 
+    # We werken met een expliciete transactie.
+    # Voordeel: bij fout kunnen we alles terugdraaien via rollback.
     conn.autocommit = False
     cur = conn.cursor()
 
@@ -162,12 +183,28 @@ def main():
             print("  Tabellen leeggemaakt.")
 
         # --- Caches voor deduplicatie ---
+        # Deze dictionaries voorkomen dat we dezelfde categorie/subcategorie
+        # meerdere keren moeten opzoeken of invoegen.
         category_cache = {}     # category_name -> id
         subcategory_cache = {}  # (category_id, sub_name) -> id
 
         # --- Producten verwerken ---
+        # product_rows bewaren we tijdelijk en schrijven we straks in batch weg.
         product_rows = []
         skipped = 0
+        duplicates_skipped = 0
+
+        # Bestaande producten ophalen zodat opnieuw importeren geen duplicaten maakt.
+        cur.execute(
+            """
+            SELECT name, description, price, category_id, subcategory_id
+            FROM products
+            """
+        )
+        existing_product_keys = {
+            make_product_key(name, description, price, category_id, subcategory_id)
+            for name, description, price, category_id, subcategory_id in cur.fetchall()
+        }
 
         print("Categorieën, subcategorieën en producten verwerken ...")
         for row in rows:
@@ -176,6 +213,8 @@ def main():
             try:
                 price = float(price_raw)
             except ValueError:
+                # Onbruikbare prijs? Deze rij telt als overgeslagen,
+                # maar de rest gaat gewoon door.
                 skipped += 1
                 continue
 
@@ -191,12 +230,22 @@ def main():
                 sub_id = get_or_insert_subcategory(cur, cat_id, sub_name, subcategory_cache)
 
             # --- Product ---
+            # Name en description normaliseren voordat ze de database in gaan.
             product_name = row.get("name", "").strip()[:MAX_PRODUCT_NAME]
             description = row.get("short_description", "").strip() or None
+
+            product_key = make_product_key(product_name, description, price, cat_id, sub_id)
+            if product_key in existing_product_keys:
+                # Al aanwezig in database of eerder in deze run toegevoegd.
+                duplicates_skipped += 1
+                continue
+
+            existing_product_keys.add(product_key)
 
             product_rows.append((product_name, description, price, cat_id, sub_id))
 
         # --- Batch-insert producten ---
+        # execute_batch is sneller dan per product een losse INSERT.
         execute_batch(
             cur,
             """
@@ -224,13 +273,17 @@ def main():
         print(f"  Producten:       {n_prods}")
         if skipped:
             print(f"  Overgeslagen:    {skipped} (geen geldige prijs)")
+        if duplicates_skipped:
+            print(f"  Dubbelen:        {duplicates_skipped} (al aanwezig)")
 
     except Exception as e:
+        # Bij een onverwachte fout draaien we alle wijzigingen terug.
         conn.rollback()
         cur.close()
         conn.close()
         sys.exit(f"Fout tijdens invoegen: {e}")
 
+    # Resources altijd sluiten als alles goed ging.
     cur.close()
     conn.close()
 
