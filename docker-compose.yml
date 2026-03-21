@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # --- THE DATABASE ---
+  db:
+    image: postgres:18
+    restart: always # If the VM reboots, start this automatically
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "8432:5432"
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d
+      - pgdata:/var/lib/postgresql/data
+
+  # --- BACKEND ---
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=mydb;Username=myuser;Password=mypassword
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  # --- FRONTEND ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+# Declare the persistent volume so Docker knows it exists
+volumes:
+  pgdata:
