@@ -7,15 +7,14 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    
     steps:
-      - name: SSH into VM and Deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          password: ${{ secrets.VM_PASSWORD }}
-          script: |
-            cd /home/ubuntu-1104947/DT-website
-            git pull origin main
-            docker-compose up -d --build
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy Stack
+        run: |
+          cd /home/ubuntu-1104947/DT-website
+          git pull origin main
+          docker-compose up -d --build
