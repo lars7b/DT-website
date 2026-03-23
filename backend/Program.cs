@@ -1,12 +1,9 @@
-using Microsoft.EntityFrameworkCore;
+using Backend.Repositories;
+using Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-/*
 builder.Services.AddControllers();
-builder.Services.AddDbContext<AppDbContext>(op =>
-    op.UseSqlite("Data Source=doge.db"));
-*/
 
 // CORS Policy
 builder.Services.AddCors(options =>
@@ -23,15 +20,15 @@ builder.Services.AddCors(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.Cookie.Name = ".EmployeeApp.Session";
+    options.Cookie.Name = ".StoreApp.Session";
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.IsEssential = true;
 });
 
 // dependency injection
 // every user gets their own database connection, destroyed after use.
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<CustomerRepository>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 var app = builder.Build();
 
