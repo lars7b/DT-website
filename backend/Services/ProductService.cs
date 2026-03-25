@@ -4,12 +4,14 @@ using Npgsql;
 
 namespace Backend.Services;
 
+// Contains the product business/data logic.
 public sealed class ProductService : IProductService
 {
     private readonly string _connectionString;
 
     public ProductService(IConfiguration configuration)
     {
+        // Reads the database connection string from appsettings or environment variables.
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
     }
@@ -20,6 +22,7 @@ public sealed class ProductService : IProductService
         int? subcategoryId,
         CancellationToken cancellationToken = default)
     {
+        // Base query. We append filter conditions only when query parameters are provided.
         var sql = new StringBuilder(
             @"SELECT p.id,
                      p.name,
@@ -34,6 +37,7 @@ public sealed class ProductService : IProductService
               LEFT JOIN subcategories s ON s.id = p.subcategory_id
               WHERE 1 = 1");
 
+        // Open a PostgreSQL connection for this request.
         await using var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
@@ -41,27 +45,32 @@ public sealed class ProductService : IProductService
 
         if (!string.IsNullOrWhiteSpace(search))
         {
+            // ILIKE enables case-insensitive text search in PostgreSQL.
             sql.Append(" AND (p.name ILIKE @search OR p.description ILIKE @search)");
             command.Parameters.AddWithValue("search", $"%{search.Trim()}%");
         }
 
         if (categoryId.HasValue)
         {
+            // Filter to a specific category when categoryId is supplied.
             sql.Append(" AND p.category_id = @categoryId");
             command.Parameters.AddWithValue("categoryId", categoryId.Value);
         }
 
         if (subcategoryId.HasValue)
         {
+            // Filter to a specific subcategory when subcategoryId is supplied.
             sql.Append(" AND p.subcategory_id = @subcategoryId");
             command.Parameters.AddWithValue("subcategoryId", subcategoryId.Value);
         }
 
+        // Stable ordering makes API output predictable.
         sql.Append(" ORDER BY p.id ASC");
         command.CommandText = sql.ToString();
 
         var products = new List<Product>();
 
+        // Execute query and map each row to a Product object.
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -73,6 +82,7 @@ public sealed class ProductService : IProductService
 
     public async Task<Product?> GetProductByIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        // Query one product by id.
         const string sql = @"SELECT p.id,
                                     p.name,
                                     p.description,
@@ -95,12 +105,14 @@ public sealed class ProductService : IProductService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {
+            // Returning null lets the controller respond with 404 Not Found.
             return null;
         }
 
         return MapProduct(reader);
     }
 
+    // Converts the current database row into a Product model.
     private static Product MapProduct(NpgsqlDataReader reader)
     {
         return new Product

@@ -3,8 +3,10 @@ using Backend.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+// Registers MVC controllers so [ApiController] classes become HTTP endpoints.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+// Registers product service in dependency injection per request.
 builder.Services.AddScoped<IProductService, ProductService>();
 
 var app = builder.Build();
@@ -17,6 +19,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Maps all controller routes, for example /api/products.
 app.MapControllers();
 
 app.Run();
