@@ -1,49 +1,24 @@
+using Backend.Models;
+
 namespace Backend.Repositories;
 
 public sealed class PaymentRepository : RepositoryBase<Payment>
 {
-    public PaymentRepository(IDataContext dataContext)
-        : base(dataContext) { }
+    private readonly string _table = "payments";
 
-    public IEnumerable<Payment> GetByOrderId(long orderId)
+    public PaymentRepository(IConfiguration configuration)
+        : base(configuration, "payments") { }
+
+    public List<Payment> GetByOrderId(long orderId)
     {
-        query = "";
-        return;
+        string query = "";
+        return new List<Payment>();
     }
 
-    public IEnumerable<Payment> GetById(long Id)
-    {
-        query = "SELECT * FROM payments WHERE Id = @Id";
-        return;
-    }
-
-    //
-    public IEnumerable<Payment> GetAll()
-    {
-        query = "SELECT * FROM payments";
-        return;
-    }
-
-    public IEnumerable<Payment> GetByUser(long userId)
+    public List<Payment> GetByUser(long userId)
     {
         //  payment -> order -> customers
-        query = "";
-        return;
-    }
-
-    public bool Add(Payment payment)
-    {
-        query = "";
-        return; //rows changed
-    }
-    public bool Update(Payment payment)
-    {
-        query = "";
-        return; //rows changed
-    }
-    public bool Delete(Payment payment)
-    {
-        query = "";
-        return; //rows changed
+        string query = "";
+        return new List<Payment>();
     }
 }

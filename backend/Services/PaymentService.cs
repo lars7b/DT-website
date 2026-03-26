@@ -1,41 +1,49 @@
+using Backend.Models;
+using Backend.Repositories;
+
 namespace Backend.Services;
 
 public sealed class PaymentService : IPaymentService
 {
     private readonly IRepository<Payment> _repository;
 
-    public Task<Payment>? GetPaymentByIdAsync(long id)
+    public PaymentService(IRepository<Payment> repository)
     {
-        Payment? payment = _repository.GetById(id);
-        return Task.FromResult(payment);
+        _repository = repository;
     }
 
-    public Task<IEnumerable<Payment>> GetAllPaymentsAsync()
+    public async Task<Payment?> GetPaymentByIdAsync(long id)
     {
-        return Task.FromResult(_repository.GetAll());
+        Payment? payment = await _repository.GetById(id);
+        return payment;
     }
 
-    public Task<bool> CreatePaymentAsync(Payment payment)
+    public async Task<IEnumerable<Payment>> GetAllPaymentsAsync()
     {
-        bool result = _repository.Add(payment);
-        return Task.FromResult(result);
+        return await _repository.GetAll();
     }
 
-    public Task<bool> CreatePaymentAsync(long orderId, string method)
+    public async Task<bool> CreatePaymentAsync(Payment payment)
+    {
+        bool result = await _repository.Add(payment);
+        return await Task.FromResult(result);
+    }
+
+    public async Task<bool> CreatePaymentAsync(long orderId, string method)
     {
         Payment payment = new Payment
         {
-            Amount = GetAmountForOrder(orderId), //
+            Amount = 0 ,//GetAmountForOrder(orderId), //
             Date = DateTime.Now,
             OrderId = orderId,
             Method = method,
         };
-        return CreatePaymentAsync(payment);
+        return await CreatePaymentAsync(payment);
     }
 
-    public Task UpdatePaymentAsync(Payment payment)
+    public async Task<bool> UpdatePaymentAsync(Payment payment)
     {
-        Payment? existingPayment = _repository.GetById(payment.Id);
+        Payment? existingPayment = await _repository.GetById(payment.Id);
         if (existingPayment != null)
         {
             existingPayment.Amount = payment.Amount;
@@ -43,16 +51,16 @@ public sealed class PaymentService : IPaymentService
             existingPayment.Method = payment.Method;
             existingPayment.OrderId = payment.OrderId;
         }
-        return Task.CompletedTask;
+        return await _repository.Update(existingPayment);
     }
 
-    public Task DeletePaymentAsync(long id)
+    public async Task<bool> DeletePaymentAsync(long id)
     {
-        Payment? payment = _repository.GetById(id);
+        Payment? payment = await _repository.GetById(id);
         if (payment != null)
         {
-            _repository.Delete(payment);
+            return await _repository.Delete(payment);
         }
-        return Task.CompletedTask;
+        return false;
     }
 }
