@@ -1,4 +1,6 @@
 using Backend.Services;
+using Backend.Repositories;
+using Backend.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,9 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 // Registers product service in dependency injection per request.
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+builder.Services.AddScoped<IRepository<Payment>, PaymentRepository>();
 
 var app = builder.Build();
 

@@ -4,7 +4,7 @@ namespace Backend.Services;
 
 public interface IPaymentService
 {
-    Task<Payment>? GetPaymentByIdAsync(long id);
+    Task<Payment?> GetPaymentByIdAsync(long id);
     Task<IEnumerable<Payment>> GetAllPaymentsAsync();
     Task<bool> CreatePaymentAsync(Payment payment);
     Task<bool> CreatePaymentAsync(long orderId, string method);

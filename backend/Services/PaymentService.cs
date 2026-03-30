@@ -33,10 +33,10 @@ public sealed class PaymentService : IPaymentService
     {
         Payment payment = new Payment
         {
-            Amount = 0 ,//GetAmountForOrder(orderId), //
-            Date = DateTime.Now,
+            Amount = 0, //GetAmountForOrder(orderId), //
+            PaymentDate = DateTime.Now,
             OrderId = orderId,
-            Method = method,
+            PaymentMethod = method,
         };
         return await CreatePaymentAsync(payment);
     }
@@ -47,8 +47,8 @@ public sealed class PaymentService : IPaymentService
         if (existingPayment != null)
         {
             existingPayment.Amount = payment.Amount;
-            existingPayment.Date = payment.Date;
-            existingPayment.Method = payment.Method;
+            existingPayment.PaymentDate = payment.PaymentDate;
+            existingPayment.PaymentMethod = payment.PaymentMethod;
             existingPayment.OrderId = payment.OrderId;
         }
         return await _repository.Update(existingPayment);

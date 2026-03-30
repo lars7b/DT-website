@@ -1,17 +1,19 @@
 using Backend.Models;
+using Npgsql;
 
 namespace Backend.Repositories;
 
-public sealed class PaymentRepository : RepositoryBase<Payment>
+public class PaymentRepository : RepositoryBase<Payment>
 {
-    private readonly string _table = "payments";
+    protected static readonly string _table = "payments";
+    protected static readonly string _attributes = "amount, payment_date, payment_method, order_id";
 
     public PaymentRepository(IConfiguration configuration)
-        : base(configuration, "payments") { }
+        : base(configuration, _table, Map, _attributes,_reverseMap) { }
 
     public List<Payment> GetByOrderId(long orderId)
     {
-        string query = "";
+        string query = $"SELECT * FROM {_table} WHERE order_id = @orderId;";
         return new List<Payment>();
     }
 
@@ -21,4 +23,23 @@ public sealed class PaymentRepository : RepositoryBase<Payment>
         string query = "";
         return new List<Payment>();
     }
+
+    public static Payment Map(NpgsqlDataReader reader)
+    {
+        return new Payment
+        {
+            Id = reader.GetInt64(reader.GetOrdinal("id")),
+            Amount = reader.GetDecimal(reader.GetOrdinal("amount")),
+            PaymentDate = reader.GetDateTime(reader.GetOrdinal("payment_date")),
+            PaymentMethod = reader.GetString(reader.GetOrdinal("payment_method")),
+            OrderId = reader.GetInt64(reader.GetOrdinal("order_id")),
+        };
+    }
+    private static readonly Dictionary<string, string> _reverseMap = new()
+    {
+        { "Amount", "amount" },
+        { "PaymentDate", "payment_date" },
+        { "PaymentMethod", "payment_method" },
+        { "OrderId", "order_id" }
+    };
 }
