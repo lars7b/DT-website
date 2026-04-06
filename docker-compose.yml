@@ -7,7 +7,7 @@ services:
     restart: always # If the VM reboots, start this automatically
     environment:
       POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: mydb
     ports:
       - "8432:5432"
@@ -22,7 +22,8 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Database=mydb;Username=myuser;Password=mypassword
+      - ConnectionStrings__DefaultConnection=Host=db;Database=mydb;Username=myuser;Password=${DB_PASSWORD}
+      - JwtSettings__Key=${JWT_SECRET_KEY}
     ports:
       - "8080:8080"
     depends_on:
