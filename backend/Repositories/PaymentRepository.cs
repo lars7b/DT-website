@@ -9,9 +9,9 @@ public class PaymentRepository : RepositoryBase<Payment>
     protected static readonly string _attributes = "amount, payment_date, payment_method, order_id";
 
     public PaymentRepository(IConfiguration configuration)
-        : base(configuration, _table, Map, _attributes,_reverseMap) { }
+        : base(configuration, _table, _map, _attributes,_reverseMap) { }
 
-    public List<Payment> GetByOrderId(long orderId)
+    public   List<Payment> GetByOrderId(long orderId)
     {
         string query = $"SELECT * FROM {_table} WHERE order_id = @orderId;";
         return new List<Payment>();
@@ -24,7 +24,7 @@ public class PaymentRepository : RepositoryBase<Payment>
         return new List<Payment>();
     }
 
-    public static Payment Map(NpgsqlDataReader reader)
+    private static Payment _map(NpgsqlDataReader reader)
     {
         return new Payment
         {

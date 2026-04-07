@@ -50,8 +50,9 @@ public sealed class PaymentService : IPaymentService
             existingPayment.PaymentDate = payment.PaymentDate;
             existingPayment.PaymentMethod = payment.PaymentMethod;
             existingPayment.OrderId = payment.OrderId;
+            return await _repository.Update(existingPayment);
         }
-        return await _repository.Update(existingPayment);
+        return false;
     }
 
     public async Task<bool> DeletePaymentAsync(long id)
