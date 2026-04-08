@@ -36,4 +36,37 @@ public class ShoppingCartRepository: RepositoryBase<ShoppingCart>
 
         return null;
     }
+
+    public override async Task<bool> Add(ShoppingCart entity)
+    {
+        var columnList = _reverseMap.Values.ToList();
+        var columns = string.Join(", ", columnList);
+        var parameters = string.Join(", ", columnList.Select(c => "@" + c));
+
+        string query = $@"
+            INSERT INTO {_table} ({columns})
+            VALUES ({parameters})
+            RETURNING id;
+        ";
+
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        await using var command = new NpgsqlCommand(query, connection);
+
+        foreach (var prop in typeof(ShoppingCart).GetProperties())
+        {
+            if (!_reverseMap.TryGetValue(prop.Name, out var column))
+                continue;
+
+            var value = prop.GetValue(entity) ?? DBNull.Value;
+            command.Parameters.AddWithValue("@" + column, value);
+        }
+
+        var newId = (long)await command.ExecuteScalarAsync();
+
+        typeof(ShoppingCart).GetProperty("Id")?.SetValue(entity, newId);
+
+        return true;
+    }
 }

@@ -4,6 +4,7 @@ using Backend.Models;
 
 namespace Backend.Controllers;
 
+// this has to be extra secure
 [ApiController]
 [Route("api/[controller]")]
 public sealed class PaymentController : ControllerBase

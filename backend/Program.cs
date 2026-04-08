@@ -11,8 +11,12 @@ builder.Services.AddOpenApi();
 // Registers product service in dependency injection per request.
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 
-builder.Services.AddScoped<IRepository<Payment>, PaymentRepository>();
+builder.Services.AddScoped<PaymentRepository>();
+builder.Services.AddScoped<ShoppingCartRepository>();
+builder.Services.AddScoped<CartItemRepository>();
+
 
 var app = builder.Build();
 

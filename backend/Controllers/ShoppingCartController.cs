@@ -15,12 +15,12 @@ public sealed class ShoppingCartController : ControllerBase
         _shoppingCartService = shoppingCartService;
     }
 
-    // this has to be extra secure
+    
     [HttpGet]
     public async Task<ActionResult<ShoppingCart>> GetShoppingCart()
     {
         // should be one to one relationship so could be found with user id 
-        var cart = await _shoppingCartService.GetShoppingCartByUserIdAsync(0); //should send user id
+        var cart = await _shoppingCartService.GetShoppingCartByUserIdAsync(1); //should send user id
         if (cart == null)
         {
             return NotFound();
@@ -29,12 +29,12 @@ public sealed class ShoppingCartController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreateCart(ShoppingCart cart)
+    public async Task<ActionResult> CreateCart()
     {
-        bool result = await _shoppingCartService.CreateCartAsync(cart);
+        bool result = await _shoppingCartService.CreateCartAsync(new ShoppingCart { CustomerId = 1 }); //should be changed
         if (result)
         {
-            return CreatedAtAction(nameof(GetShoppingCart), new { id = cart.Id }, cart);
+            return CreatedAtAction(nameof(GetShoppingCart), new { id = 1 }, null); //
         }
         return BadRequest();
     }
@@ -51,9 +51,9 @@ public sealed class ShoppingCartController : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult> DeleteCart(long id)
+    public async Task<ActionResult> DeleteCart(long userid)
     {
-        await _shoppingCartService.DeleteCartAsync(id);
+        await _shoppingCartService.DeleteCartAsync(userid);
         return NoContent();
     }
 }

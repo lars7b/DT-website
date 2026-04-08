@@ -5,9 +5,9 @@ namespace Backend.Services;
 
 public sealed class PaymentService : IPaymentService
 {
-    private readonly IRepository<Payment> _repository;
+    private readonly PaymentRepository _repository;
 
-    public PaymentService(IRepository<Payment> repository)
+    public PaymentService(PaymentRepository repository)
     {
         _repository = repository;
     }

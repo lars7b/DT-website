@@ -4,7 +4,7 @@ using Backend.Models;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 
-public class RepositoryBase<T> : IRepository<T>
+public class RepositoryBase<T>
     where T : IModel
 {
     protected readonly string _connectionString;
@@ -75,7 +75,7 @@ public class RepositoryBase<T> : IRepository<T>
         return default(T);
     }
 
-    public async Task<bool> Add(T entity)
+    public virtual async Task<bool> Add(T entity)
     {
         var columns = _attributes;
 

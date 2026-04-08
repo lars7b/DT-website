@@ -39,9 +39,9 @@ public sealed class ShoppingCartService : IShoppingCartService
         return false;
     }
 
-    public async Task<bool> DeleteCartAsync(long id)
+    public async Task<bool> DeleteCartAsync(long userid)
     {
-        ShoppingCart? cart = await _shoppingCartRepository.GetByUserIdAsync(id);
+        ShoppingCart? cart = await _shoppingCartRepository.GetByUserIdAsync(userid);
         if (cart != null)
         {
             return await _shoppingCartRepository.Delete(cart);
