@@ -11,7 +11,7 @@ public class PaymentRepository : RepositoryBase<Payment>
     public PaymentRepository(IConfiguration configuration)
         : base(configuration, _table, _map, _attributes,_reverseMap) { }
 
-    public   List<Payment> GetByOrderId(long orderId)
+    public List<Payment> GetByOrderId(long orderId)
     {
         string query = $"SELECT * FROM {_table} WHERE order_id = @orderId;";
         return new List<Payment>();

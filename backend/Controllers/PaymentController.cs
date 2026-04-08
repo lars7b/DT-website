@@ -29,6 +29,7 @@ public sealed class PaymentController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments()
     {
+        // check if admin return all if not return only users
         var payments = await _paymentService.GetAllPaymentsAsync();
         return Ok(payments);
     }

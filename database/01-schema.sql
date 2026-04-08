@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS "cart_items" (
 	"product_id" BIGINT,
 	"quantity" INT,
 	CONSTRAINT "fk_cart_items_cart"
-		FOREIGN KEY ("cart_id") REFERENCES "shopping_carts" ("id"),
+		FOREIGN KEY ("cart_id") REFERENCES "shopping_carts" ("id") ON DELETE CASCADE,
 	CONSTRAINT "fk_cart_items_product"
 		FOREIGN KEY ("product_id") REFERENCES "products" ("id")
 );

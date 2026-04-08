@@ -12,6 +12,8 @@ public sealed class PaymentService : IPaymentService
         _repository = repository;
     }
 
+    // use encryption
+
     public async Task<Payment?> GetPaymentByIdAsync(long id)
     {
         Payment? payment = await _repository.GetById(id);
