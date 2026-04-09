@@ -3,7 +3,7 @@ using Npgsql;
 
 namespace Backend.Repositories;
 
-public class CustomerRepository
+public class CustomerRepository : ICustomerRepository
 {
     private readonly string _connectionString;
 
@@ -13,30 +13,18 @@ public class CustomerRepository
                             ?? throw new InvalidOperationException("DB Connection missing");
     }
 
-    public async Task<List<Customer>> GetAllCustomersAsync()
+    public async Task<Customer> GetCustomerAsync(int id)
     {
-        var customers = new List<Customer>();
+        return default;
+    }
 
-        using var connection = new NpgsqlConnection(_connectionString);
-        await connection.OpenAsync();
+    public async Task<bool> UpdateCustomerAsync(int id, Customer customer)
+    {
+        return default;
+    }
 
-        using var command = new NpgsqlCommand("SELECT id, first_name, last_name, email, phone, address FROM customers", connection);
-        
-        using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
-        {
-            customers.Add(new Customer
-            {
-                Id = reader.GetInt32(0),
-                FirstName = reader.GetString(1),
-                LastName = reader.GetString(2),
-                Email = reader.GetString(3), //null?
-                Phone = reader.GetString(4), //null?
-                Address = reader.GetString(5) //null?
-            });
-        }
-
-        return customers;
+    public async Task<List<Order>> GetCustomerOrdersAsync(int id)
+    {
+        return default;
     }
 }

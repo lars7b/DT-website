@@ -1,8 +1,8 @@
 using Backend.Models;
 
-namespace Backend.Services;
+namespace Backend.Repositories;
 
-public interface ICustomerService
+public interface ICustomerRepository
 {
     Task<Customer> GetCustomerAsync(int id);
     Task<bool> UpdateCustomerAsync(int id, Customer customer);

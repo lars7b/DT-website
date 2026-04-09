@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using Backend.DTOs;
 using Backend.Services;
 using Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CustomerController : ControllerBase
 {
     private readonly ICustomerService _customerService;
@@ -15,10 +18,41 @@ public class CustomerController : ControllerBase
         _customerService = customerService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<List<Customer>>> GetAllCustomers()
+    private int GetUserIdFromToken()
     {
-        var customers = await _customerService.GetAllCustomersAsync();
-        return Ok(customers);
+        // helper method om ID uit JWT te halen.
+        return 0;
+    }
+
+
+    [HttpGet("me")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<Customer>> GetMyProfile()
+    {
+        int userId = GetUserIdFromToken();
+
+
+        return default;
+    }
+
+    [HttpPut("me")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult> UpdateProfile([FromBody] CustomerDto request)
+    {
+        int userId = GetUserIdFromToken();
+
+        return default;
+    }
+
+    [HttpGet("me/orders")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<Order>>> GetMyOrders()
+    {
+        int userId = GetUserIdFromToken();
+
+        return default;
+
+        //Bestel geschiedenis voor 1 klant.
+        //JOIN tussen orders en order_items
     }
 }

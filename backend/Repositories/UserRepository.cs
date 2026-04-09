@@ -18,14 +18,14 @@ public class UserRepository : IUserRepository
     public async Task<User?> CreateUserWithCustomerAsync(User user)
     {
 
-        using var connection = new NpgsqlConnection(_connectionString);
+        await using var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync();
 
-        using var transaction = await connection.BeginTransactionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
 
         try
         {
-            using var userCommand = new NpgsqlCommand(@"
+            await using var userCommand = new NpgsqlCommand(@"
                 INSERT INTO users (email, password_hash, role) 
                 VALUES (@Email, @PasswordHash, @Role) 
                 RETURNING id;", connection, transaction);
@@ -36,7 +36,7 @@ public class UserRepository : IUserRepository
 
             var userId = (int)await userCommand.ExecuteScalarAsync();
 
-            using var customerCommand = new NpgsqlCommand(@"
+            await using var customerCommand = new NpgsqlCommand(@"
                 INSERT INTO customers (user_id) 
                 VALUES (@UserId);", connection, transaction);
 
@@ -66,17 +66,17 @@ public class UserRepository : IUserRepository
     {
         try
         {
-            using var connection = new NpgsqlConnection(_connectionString);
+            await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            using var command = new NpgsqlCommand(@"
+            await using var command = new NpgsqlCommand(@"
                 SELECT id, email, password_hash, role
                 FROM users
                 WHERE email = @Email;", connection);
 
             command.Parameters.AddWithValue("@Email", email);
 
-            using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
 
             if (await reader.ReadAsync())
             {
