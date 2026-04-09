@@ -5,23 +5,22 @@ namespace Backend.Repositories;
 
 public class PaymentRepository:IRepository<Payment>
 {
-    private readonly string _connectionString;
     protected static readonly string _table = "payments";
     protected static readonly string _attributes = "amount, payment_date, payment_method, order_id";
     private readonly NpgsqlConnection db;
 
     public PaymentRepository(IConfiguration configuration)
     {
-        _connectionString =
+        string connectionString =
             configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DB Connection missing");
 
-        db = new NpgsqlConnection(_connectionString);
+        db = new NpgsqlConnection(connectionString);
     }
 
     public async Task<List<Payment>> GetAll()
     {
-        var payments = await db.QueryAsync<Payment>($"SELECT * FROM {_table}"); //
+        var payments = await db.QueryAsync<Payment>($"SELECT * FROM {_table}");
         return payments.ToList();
     }
     public async Task<Payment?> GetById(long id)
@@ -40,8 +39,7 @@ public class PaymentRepository:IRepository<Payment>
     }
     public async Task<bool> Update(Payment payment)
     {
-        string setClause = string.Join(", ", _attributes.Split(", ").Select(a => $"{a} = @{a}"));
-        string query = $"UPDATE {_table} SET {setClause} WHERE id = @Id;";
+        string query = $"UPDATE {_table} SET amount = @Amount, payment_date = @PaymentDate, payment_method = @PaymentMethod, order_id = @OrderId WHERE id = @Id;";
         var result = await db.ExecuteAsync(query, payment);
         return result > 0;
     }
