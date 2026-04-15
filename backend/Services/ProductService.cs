@@ -9,11 +9,9 @@ public sealed class ProductService : IProductService
 {
     private readonly string _connectionString;
 
-    public ProductService(IConfiguration configuration)
+    public ProductService(string connectionString)
     {
-        // Reads the database connection string from appsettings or environment variables.
-        _connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
+        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     public async Task<IReadOnlyList<Product>> GetProductsAsync(
