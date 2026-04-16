@@ -1,0 +1,29 @@
+###
+GET http://localhost:5066/api/payment
+
+
+### 
+POST http://localhost:5066/api/payment
+Content-Type: application/json
+
+{
+    "amount": 100.00,
+    "currency": "eur",
+    "paymentMethod": "Credit Card",
+  "orderId": 1
+}
+
+###
+DELETE http://localhost:5066/api/payment/10
+
+###
+PUT  http://localhost:5066/api/payment/10
+Content-Type: application/json
+
+{
+"id": 10,
+"amount": 170.00,
+"paymentDate": "2028-01-01T00:00:00",
+"paymentMethod": "Credit Card",
+"orderId": 1
+}
