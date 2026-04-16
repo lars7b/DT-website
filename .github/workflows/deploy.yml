@@ -14,7 +14,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy Stack
+        env:
+          DB_PASS: ${{ secrets.DB_PASSWORD }}
+          JWT_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        
         run: |
           cd /home/ubuntu-1104947/DT-website
           git pull origin main
+
+          echo "DB_PASSWORD=${DB_PASS}" > .env
+          echo "JWT_SECRET_KEY=${JWT_KEY}" >> .env
+          
           docker-compose up -d --build
