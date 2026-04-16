@@ -27,6 +27,7 @@ public sealed class PaymentService : IPaymentService
 
     public async Task<bool> CreatePaymentAsync(Payment payment)
     {
+        // needs to check if order id exists and check price before create
         bool result = await _repository.Add(payment);
         return await Task.FromResult(result);
     }

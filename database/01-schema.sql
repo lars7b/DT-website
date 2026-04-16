@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS "payments" (
 	"payment_date" DATE DEFAULT CURRENT_DATE NOT NULL,
 	"amount" DECIMAL(10, 2) NOT NULL,
 	"payment_method" VARCHAR(50) NOT NULL,
+	"status" VARCHAR(20) NOT NULL,
 	CONSTRAINT "fk_payments_order"
 		FOREIGN KEY ("order_id") REFERENCES "orders" ("id")
 );

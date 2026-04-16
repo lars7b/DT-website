@@ -1,10 +1,10 @@
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Backend.Models;
-
+using Microsoft.AspNetCore.Authorization;
 namespace Backend.Controllers;
 
-// this has to be extra secure
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public sealed class PaymentController : ControllerBase
@@ -17,7 +17,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Payment>> GetPaymentById(long id)
+    public async Task<ActionResult<Payment>> GetPaymentById(long id,CancellationToken cancellationToken)
     {
         var payment = await _paymentService.GetPaymentByIdAsync(id);
         if (payment == null)
@@ -28,7 +28,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments()
+    public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments(CancellationToken cancellationToken)
     {
         // check if admin return all if not return only users
         var payments = await _paymentService.GetAllPaymentsAsync();
