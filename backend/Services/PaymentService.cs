@@ -1,9 +1,10 @@
 using Backend.Models;
 using Backend.Repositories;
+using Isopoh.Cryptography.Argon2;
 
 namespace Backend.Services;
 
-public sealed class PaymentService : IPaymentService
+using Isopoh.Cryptography.Argon2;public sealed class PaymentService : IPaymentService
 {
     private readonly PaymentRepository _repository;
 
@@ -14,13 +15,13 @@ public sealed class PaymentService : IPaymentService
 
     // use encryption
 
-    public async Task<Payment?> GetPaymentByIdAsync(long id)
+    public async Task<Payment?> GetPaymentByIdAsync(long id, CancellationToken cancellationToken =default)
     {
         Payment? payment = await _repository.GetById(id);
         return payment;
     }
 
-    public async Task<IEnumerable<Payment>> GetAllPaymentsAsync()
+    public async Task<IEnumerable<Payment>> GetAllPaymentsAsync( CancellationToken cancellationToken =default)
     {
         return await _repository.GetAll();
     }
@@ -40,6 +41,7 @@ public sealed class PaymentService : IPaymentService
             PaymentDate = DateTime.Now,
             OrderId = orderId,
             PaymentMethod = method,
+            Status = "Paid"
         };
         return await CreatePaymentAsync(payment);
     }

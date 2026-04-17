@@ -3,29 +3,31 @@ namespace Backend.Services;
 using Backend.Models;
 using Backend.Repositories;
 
-public sealed class ShoppingCartService : IShoppingCartService
+public sealed class ShoppingCartService //: IShoppingCartService
 {
     private readonly ShoppingCartRepository _shoppingCartRepository;
-    private readonly CartItemRepository _cartItemRepository;
 
-    public ShoppingCartService(
-        ShoppingCartRepository shoppingCartRepository,
-        CartItemRepository cartItemRepository
-    )
+    public ShoppingCartService(ShoppingCartRepository shoppingCartRepository)
     {
         _shoppingCartRepository = shoppingCartRepository;
-        _cartItemRepository = cartItemRepository;
     }
 
     public async Task<ShoppingCart?> GetShoppingCartByUserIdAsync(long userId)
     {
         // should be one to one relationship so could be found with user id
+        //should return all items
         return await _shoppingCartRepository.GetByUserIdAsync(userId);
     }
 
-    public async Task<bool> CreateCartAsync(ShoppingCart cart)
+    public async Task<bool> AddItemsAsync(long userid, CartItem items)
     {
-        return await _shoppingCartRepository.Add(cart);
+        if (items.CartId == null)
+        {
+            _shoppingCartRepository.CreateCart(new ShoppingCart { }); //
+        }
+        //get cart and check if user same
+
+        return await _shoppingCartRepository.AddItem();
     }
 
     public async Task<bool> UpdateCartAsync(ShoppingCart cart)

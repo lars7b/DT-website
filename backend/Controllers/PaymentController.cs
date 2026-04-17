@@ -36,7 +36,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreatePayment(Payment payment)
+    public async Task<ActionResult> CreatePayment(Payment payment) // of order
     {
         bool result = await _paymentService.CreatePaymentAsync(payment);
         if (result)
@@ -46,6 +46,7 @@ public sealed class PaymentController : ControllerBase
         return BadRequest();
     }
 
+    [Authorize(Roles="Admin")]
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdatePayment(long id, Payment payment)
     {
@@ -57,6 +58,7 @@ public sealed class PaymentController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles="Admin")]
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeletePayment(long id)
     {

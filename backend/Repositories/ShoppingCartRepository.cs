@@ -1,8 +1,12 @@
 namespace Backend.Repositories;
+
 using Backend.Models;
+using Dapper;
 using Npgsql;
 
-public class ShoppingCartRepository{
+// handles cart_items and shopping_carts tables
+public class ShoppingCartRepository
+{
     private readonly NpgsqlConnection db;
 
     public ShoppingCartRepository(IConfiguration configuration)
@@ -13,62 +17,68 @@ public class ShoppingCartRepository{
 
         db = new NpgsqlConnection(connectionString);
     }
-    public async Task<ShoppingCart?> GetByUserIdAsync(long userId)
+
+    public async Task<ShoppingCart?> GetCartByUserIdAsync(long userId)
     {
-        // string query = " SELECT * FROM shopping_carts WHERE customer_id = @userId LIMIT 1;";
-        // await using var connection = new NpgsqlConnection(_connectionString);
-        // await connection.OpenAsync();
-
-        // await using var command = new NpgsqlCommand(query, connection);
-        // command.Parameters.AddWithValue("@userId", userId);
-
-        // await using var reader = await command.ExecuteReaderAsync();
-
-        // if (await reader.ReadAsync())
-        // {
-        //     return _map(reader);
-        // }
-
-        return null;
+        var cart = await db.QueryFirstOrDefaultAsync<ShoppingCart>(
+            "SELECT * FROM shopping_carts WHERE customer_id = @userId LIMIT 1;",
+            new { userId }
+        );
+        return cart;
     }
 
-    public async Task<bool> Add(ShoppingCart entity)
+    public async Task<List<CartItem>> GetAllItemsFromCartByUserId(long userId)
     {
-        // var columnList = _reverseMap.Values.ToList();
-        // var columns = string.Join(", ", columnList);
-        // var parameters = string.Join(", ", columnList.Select(c => "@" + c));
-
-        // string query = $@"
-        //     INSERT INTO {_table} ({columns})
-        //     VALUES ({parameters})
-        //     RETURNING id;
-        // ";
-
-        // await using var connection = new NpgsqlConnection(_connectionString);
-        // await connection.OpenAsync();
-
-        // await using var command = new NpgsqlCommand(query, connection);
-
-        // foreach (var prop in typeof(ShoppingCart).GetProperties())
-        // {
-        //     if (!_reverseMap.TryGetValue(prop.Name, out var column))
-        //         continue;
-
-        //     var value = prop.GetValue(entity) ?? DBNull.Value;
-        //     command.Parameters.AddWithValue("@" + column, value);
-        // }
-
-        // var newId = (long)await command.ExecuteScalarAsync();
-
-        // typeof(ShoppingCart).GetProperty("Id")?.SetValue(entity, newId);
-
-        return true;
+        var items = await db.QueryAsync<CartItem>(
+            $"SELECT * FROM cart_items AS items JOIN shopping_carts AS cart ON items.cart_id = cart.id JOIN users ON users.id = cart.customer_id WHERE users.id = @userId;",
+            new { userId }
+        );
+        return items.ToList();
     }
-    public async Task<ShoppingCart?> GetById(long id)
+
+    public async Task<bool> AddItem(CartItem entity)
     {
-        return null;
+        string query =
+            "INSERT INTO shopping_carts (cart_id,product_id,quantity) VALUES (@CartId,@PorductId,@Quantity);";
+        var result = await db.ExecuteAsync(query, entity);
+        return result > 0;
     }
-    // public async Task<ShoppingCart> 
-    public async Task<bool> Update(ShoppingCart cart){return false;}
-    public async Task<bool>  Delete(ShoppingCart cart){return false;}
+
+    public async Task<bool> CreateCart(ShoppingCart cart)
+    {
+        string query = "INSERT INTO shopping_carts (customer_id) VALUES (@CustomerId);";
+        var result = await db.ExecuteAsync(query, cart);
+        return result > 0;
+    }
+
+    public async Task<ShoppingCart?> GetCartById(long id)
+    {
+        var cart = await db.QueryFirstOrDefaultAsync<ShoppingCart>(
+            $"SELECT * FROM shopping_carts WHERE id = @id",
+            new { id }
+        );
+        return cart;
+    }
+
+    public async Task<CartItem?> GetItemById(long id)
+    {
+        var cart = await db.QueryFirstOrDefaultAsync<ShoppingCart>(
+            $"SELECT * FROM cart_items WHERE id = @id",
+            new { id }
+        );
+        return cart;
+    }
+
+    // public async Task<ShoppingCart>
+    public async Task<bool> Update(ShoppingCart cart)
+    {
+                throw new NotImplementedException();
+        return false;
+    }
+
+    public async Task<bool> Delete(ShoppingCart cart)
+    {
+                throw new NotImplementedException();
+        return false;
+    }
 }

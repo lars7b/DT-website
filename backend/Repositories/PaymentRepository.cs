@@ -53,15 +53,16 @@ public class PaymentRepository
 
     public List<Payment> GetByOrderId(long orderId)
     {
-        string query = $"SELECT * FROM {_table} WHERE order_id = @orderId;";
-        return new List<Payment>();
+        string query = $"SELECT * FROM payments WHERE order_id = @orderId;";
+        var payments = await db.QueryAsync<Payment>(query);
+        return payments.ToList();
     }
 
     public List<Payment> GetByUser(long userId)
     {
-        throw new NotImplementedException();
         //  payment -> order -> customers
-        string query = "";
-        return new List<Payment>();
+        string query = $"SELECT * FROM payments AS p JOIN orders AS o ON p.order_id = o.id JOIN users AS u ON u.id=o.customer_id";
+        var payments = await db.QueryAsync<Payment>(query);
+        return payments.ToList();
     }
 }

@@ -17,11 +17,10 @@ public sealed class ShoppingCartController : ControllerBase
         _shoppingCartService = shoppingCartService;
     }
 
-    
     [HttpGet]
-    public async Task<ActionResult<ShoppingCart>> GetShoppingCart()
+    public async Task<ActionResult<ShoppingCart>> GetShoppingCart(CancellationToken token)
     {
-        // should be one to one relationship so could be found with user id 
+        // should be one to one relationship so could be found with user id
         var cart = await _shoppingCartService.GetShoppingCartByUserIdAsync(1); //should send user id
         if (cart == null)
         {
@@ -30,10 +29,10 @@ public sealed class ShoppingCartController : ControllerBase
         return Ok(cart);
     }
 
-    [HttpPost]
-    public async Task<ActionResult> CreateCart()
+    [HttpPost("Item")]
+    public async Task<ActionResult> CreateCart(long productId,int quantity) // cartitem (Dto) or  long productId,int quantity
     {
-        bool result = await _shoppingCartService.CreateCartAsync(new ShoppingCart { CustomerId = 1 }); //should be changed
+        bool result = await _shoppingCartService.AddItemsAsync(1,new CartItem { ProductId = productId,Quantity = quantity}); //should be changed
         if (result)
         {
             return CreatedAtAction(nameof(GetShoppingCart), new { id = 1 }, null); //
@@ -41,7 +40,7 @@ public sealed class ShoppingCartController : ControllerBase
         return BadRequest();
     }
 
-    [HttpPut]
+    [HttpPut("Item/{id}")]
     public async Task<ActionResult> UpdateShoppingCart(long id, ShoppingCart cart)
     {
         if (id != cart.Id)
@@ -52,10 +51,10 @@ public sealed class ShoppingCartController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete]
-    public async Task<ActionResult> DeleteCart(long userid)
+    [HttpDelete("Item/{id}")]
+    public async Task<ActionResult> DeleteCartItem(long cartitemId)
     {
-        await _shoppingCartService.DeleteCartAsync(userid);
+        await _shoppingCartService.DeleteCartAsync(cartitemId);
         return NoContent();
     }
 }
