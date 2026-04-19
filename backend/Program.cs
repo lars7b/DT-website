@@ -1,8 +1,21 @@
+using Backend.Repositories;
+using Backend.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+builder.Services.AddScoped<CustomerRepository>();
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<SubcategoryRepository>();
+
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
 var app = builder.Build();
 
@@ -13,6 +26,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.MapControllers();
 
 var summaries = new[]
 {
