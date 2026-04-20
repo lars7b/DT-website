@@ -1,4 +1,5 @@
 using Backend.Models;
+using Npgsql;
 namespace Backend.Repositories;
 
 /// <summary>
@@ -6,6 +7,16 @@ namespace Backend.Repositories;
 /// </summary>
 public class OrderRepository:IOrderRepository
 {
+    private readonly NpgsqlConnection _connection;
+
+    public OrderRepository(IConfiguration configuration)
+    {
+        string connectionString =
+            configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("DB Connection missing");
+
+        _connection = new NpgsqlConnection(connectionString);
+    }
     public async Task<Order?> GetOrderByIdAsync(long id)
     {
         return new Order{};
