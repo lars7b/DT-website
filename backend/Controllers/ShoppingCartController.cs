@@ -32,7 +32,7 @@ public sealed class ShoppingCartController : ControllerBase
     [HttpPost("Item")]
     public async Task<ActionResult> CreateCart(long productId,int quantity) // cartitem (Dto) or  long productId,int quantity
     {
-        bool result = await _shoppingCartService.AddItemsAsync(1,new CartItem { ProductId = productId,Quantity = quantity}); //should be changed
+        bool result = await _shoppingCartService.AddItemsAsync(1,new CartItemDto { ProductId = productId,Quantity = quantity}); //should be changed
         if (result)
         {
             return CreatedAtAction(nameof(GetShoppingCart), new { id = 1 }, null); //
