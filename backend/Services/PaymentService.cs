@@ -4,7 +4,8 @@ using Isopoh.Cryptography.Argon2;
 
 namespace Backend.Services;
 
-using Isopoh.Cryptography.Argon2;public sealed class PaymentService : IPaymentService
+
+public sealed class PaymentService : IPaymentService
 {
     private readonly PaymentRepository _repository;
 

@@ -51,17 +51,24 @@ public class PaymentRepository
         return result > 0;
     }
 
-    public List<Payment> GetByOrderId(long orderId)
+    public async Task<List<Payment>> GetByOrderId(long orderId)
     {
         string query = $"SELECT * FROM payments WHERE order_id = @orderId;";
         var payments = await db.QueryAsync<Payment>(query,new { orderId });
         return payments.ToList();
     }
 
-    public List<Payment> GetByUser(long userId)
+    public async Task<List<Payment>> GetByUser(long userId)
     {
         string query = $"SELECT * FROM payments AS p JOIN orders AS o ON p.order_id = o.id JOIN users AS u ON u.id=o.customer_id WHERE u.id=@userId;";
         var payments = await db.QueryAsync<Payment>(query, new{userId});
         return payments.ToList();
     }
+
+    // public async Task<int> GetAmountForOrder(Order order)
+    // {
+    //     string query = $"SELECT amount FROM order WHERE id=@Id;";
+    //     var amount = await db.QueryAsync<int>(query, new{order.Id});
+    //     return amount;
+    // }
 }

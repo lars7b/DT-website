@@ -10,9 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
-builder.Services.AddFluentValidationAutoValidation();
+// iets gaat fout met de FluentValidation dus is tijdelijk weg gekoment
+// onderzoek naar:  https://docs.fluentvalidation.net/en/latest/aspnet.html?highlight=build
+// builder.Services.AddFluentValidationAutoValidation();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+var key = Encoding.UTF8.GetBytes(jwtSettings!=null&&jwtSettings["Key"]!=null?jwtSettings["Key"]:"RandomKey");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -46,7 +48,7 @@ builder.Services.AddCors(options =>
 
 // dependency injection
 // every user gets their own database connection, destroyed after use.
-builder.Services.AddScoped<CustomerRepository>();
+builder.Services.AddScoped<ICustomerRepository,CustomerRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -57,7 +59,6 @@ builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 
 builder.Services.AddScoped<PaymentRepository>();
 builder.Services.AddScoped<ShoppingCartRepository>();
-builder.Services.AddScoped<CartItemRepository>();
 
 var app = builder.Build();
 

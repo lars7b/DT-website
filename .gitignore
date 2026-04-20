@@ -30,6 +30,8 @@ backend/appsettings.Development.json
 # Ignore any local SQLite databases just in case
 *.db
 *.db-journal
+# ignore .rest files that are used to test the api
+*.rest
 
 # =========================
 # Docker

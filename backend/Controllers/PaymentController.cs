@@ -19,7 +19,7 @@ public sealed class PaymentController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Payment>> GetPaymentById(long id,CancellationToken cancellationToken)
     {
-        var payment = await _paymentService.GetPaymentByIdAsync(id);
+        var payment = await _paymentService.GetPaymentByIdAsync(id, cancellationToken);
         if (payment == null)
         {
             return NotFound();
@@ -30,8 +30,8 @@ public sealed class PaymentController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments(CancellationToken cancellationToken)
     {
-        // check if admin return all if not return only users
-        var payments = await _paymentService.GetAllPaymentsAsync();
+        // check if admin return all if not return only users payments
+        var payments = await _paymentService.GetAllPaymentsAsync(cancellationToken);
         return Ok(payments);
     }
 
@@ -54,7 +54,11 @@ public sealed class PaymentController : ControllerBase
         {
             return BadRequest();
         }
-        await _paymentService.UpdatePaymentAsync(payment);
+        bool succesful = await _paymentService.UpdatePaymentAsync(payment);
+        if (succesful == false)
+        {
+            return BadRequest("Updating was unsuccesful");
+        }
         return NoContent();
     }
 
@@ -62,7 +66,11 @@ public sealed class PaymentController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeletePayment(long id)
     {
-        await _paymentService.DeletePaymentAsync(id);
+        bool succesful = await _paymentService.DeletePaymentAsync(id);
+        if (succesful == false)
+        {
+            return BadRequest("Deleting was unsuccesful");
+        }
         return NoContent();
     }
 }
