@@ -20,7 +20,7 @@ public class ShoppingCartRepository
 
     public async Task<ShoppingCart?> GetCartByUserIdAsync(long userId)
     {
-        var cart = await db.QueryFirstOrDefaultAsync<ShoppingCart>(
+        ShoppingCart? cart = await db.QueryFirstOrDefaultAsync<ShoppingCart>(
             "SELECT * FROM shopping_carts WHERE customer_id = @userId LIMIT 1;",
             new { userId }
         );
@@ -40,20 +40,20 @@ public class ShoppingCartRepository
     {
         string query =
             "INSERT INTO shopping_carts (cart_id,product_id,quantity) VALUES (@CartId,@PorductId,@Quantity);";
-        var result = await db.ExecuteAsync(query, entity);
+        int result = await db.ExecuteAsync(query, entity);
         return result > 0;
     }
 
     public async Task<bool> CreateCart(ShoppingCart cart)
     {
         string query = "INSERT INTO shopping_carts (customer_id) VALUES (@CustomerId);";
-        var result = await db.ExecuteAsync(query, cart);
+        int result = await db.ExecuteAsync(query, cart);
         return result > 0;
     }
 
     public async Task<ShoppingCart?> GetCartById(long id)
     {
-        var cart = await db.QueryFirstOrDefaultAsync<ShoppingCart>(
+        ShoppingCart? cart = await db.QueryFirstOrDefaultAsync<ShoppingCart>(
             $"SELECT * FROM shopping_carts WHERE id = @id",
             new { id }
         );
@@ -62,23 +62,28 @@ public class ShoppingCartRepository
 
     public async Task<CartItem?> GetItemById(long id)
     {
-        var cart = await db.QueryFirstOrDefaultAsync<ShoppingCart>(
+        CartItem? item = await db.QueryFirstOrDefaultAsync<CartItem>(
             $"SELECT * FROM cart_items WHERE id = @id",
             new { id }
         );
-        return cart;
+        return item;
     }
 
-    // public async Task<ShoppingCart>
-    public async Task<bool> Update(ShoppingCart cart)
+    public async Task<bool> UpdateItems(ShoppingCart cart)
     {
-                throw new NotImplementedException();
-        return false;
+        int result= 0;
+        for (int i = 0; i < cart.Items.Count; i++)
+        {
+            string query="UPDATE cart_items SET product_id = @ProductId, quantity = @Quantity WHERE id = @Id AND cart_id=@CartId;";
+            result += await db.ExecuteAsync(query, cart.Items[i]);
+        }
+        return result > 0;
     }
 
     public async Task<bool> Delete(ShoppingCart cart)
     {
-                throw new NotImplementedException();
-        return false;
+        string query = $"DELETE FROM shopping_carts WHERE id = @Id;";
+        var result = await db.ExecuteAsync(query, new { cart.Id });
+        return result > 0;
     }
 }

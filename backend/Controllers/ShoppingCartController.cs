@@ -2,7 +2,7 @@ using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Backend.Models;
 using Microsoft.AspNetCore.Authorization;
-
+using Backend.DTOs;
 namespace Backend.Controllers;
 
 [Authorize]
@@ -18,7 +18,7 @@ public sealed class ShoppingCartController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<ShoppingCart>> GetShoppingCart(CancellationToken token)
+    public async Task<ActionResult<ShoppingCartDto>> GetShoppingCart(CancellationToken token)
     {
         // should be one to one relationship so could be found with user id
         var cart = await _shoppingCartService.GetShoppingCartByUserIdAsync(1); //should send user id
@@ -41,7 +41,7 @@ public sealed class ShoppingCartController : ControllerBase
     }
 
     [HttpPut("Item/{id}")]
-    public async Task<ActionResult> UpdateShoppingCart(long id, ShoppingCart cart)
+    public async Task<ActionResult> UpdateShoppingCart(long id, ShoppingCartDto cart)
     {
         if (id != cart.Id)
         {

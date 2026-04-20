@@ -1,9 +1,10 @@
-// namespace Backend.Services;
-// using Backend.Models;
-// public interface IShoppingCartService
-// {
-//     Task<ShoppingCart?> GetShoppingCartByUserIdAsync(long userId);
-//     Task<bool> CreateCartAsync(ShoppingCart cart);
-//     Task<bool> UpdateCartAsync(ShoppingCart cart);
-//     Task<bool> DeleteCartAsync(long id);
-// }
+namespace Backend.Services;
+using Backend.Models;
+using Backend.DTOs;
+public interface IShoppingCartService 
+{
+    Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(long userId);
+    Task<bool> AddItemsAsync(long userId, CartItemDto items);
+    Task<bool> UpdateCartAsync(ShoppingCartDto cart);
+    Task<bool> DeleteCartAsync(long id);
+}
