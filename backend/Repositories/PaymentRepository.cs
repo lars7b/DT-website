@@ -18,12 +18,12 @@ public class PaymentRepository
         _connection = new NpgsqlConnection(connectionString);
     }
 
-    public async Task<List<Payment>> GetAll()
+    public async Task<List<Payment>> GetAll(CancellationToken cancellationToken)
     {
         var payments = await _connection.QueryAsync<Payment>($"SELECT * FROM {_table}");
         return payments.ToList();
     }
-    public async Task<Payment?> GetById(long id)
+    public async Task<Payment?> GetById(long id,CancellationToken cancellationToken)
     {
         var payment = await _connection.QueryFirstOrDefaultAsync<Payment>(
             $"SELECT * FROM {_table} WHERE id = @id",
@@ -60,7 +60,7 @@ public class PaymentRepository
 
     public async Task<List<Payment>> GetByUser(long userId)
     {
-        string query = $"SELECT * FROM payments AS p JOIN orders AS o ON p.order_id = o.id JOIN users AS u ON u.id=o.customer_id WHERE u.id=@userId;";
+        string query = $"SELECT * FROM payments AS p JOIN orders AS o ON p.order_id = o.id JOIN customers AS c ON c.id=o.customer_id WHERE c.id=@userId;";
         var payments = await _connection.QueryAsync<Payment>(query, new{userId});
         return payments.ToList();
     }
@@ -71,18 +71,4 @@ public class PaymentRepository
         decimal amount = await _connection.ExecuteScalarAsync<decimal>(query, new{order.Id});
         return amount;
     }
-
-    //TODO
-    // Env.Load();
-    // var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION");
-    // NpgsqlConnection _connection = new NpgsqlConnection(connectionString);
-
-    // // Example: Query rows
-    // var sql = "SELECT id, first_name as FirstName, email FROM students";
-    // var students = _connection.Query<Student>(sql);
-
-    // foreach (var s in students)
-    // {
-    //     Console.WriteLine($"{s.Id} - {s.FirstName} - {s.Email}");
-    // }
 }

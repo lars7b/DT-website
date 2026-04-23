@@ -16,10 +16,7 @@ public sealed class ShoppingCartService : IShoppingCartService
     public async Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(long userId)
     {
         // should be one to one relationship so could be found with user id
-        //should return all items
-        List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByUserId(
-            userId
-        );
+        List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByUserId(userId);
         if (cartItems == null || cartItems.Count == 0)
         {
             return null;
@@ -46,7 +43,7 @@ public sealed class ShoppingCartService : IShoppingCartService
         ShoppingCart? cart = await _shoppingCartRepository.GetCartByUserIdAsync(userid);
         if (cart == null || cart.Id == null)
         {
-            _shoppingCartRepository.CreateCart(new ShoppingCart { CustomerId = userid }); //
+            _shoppingCartRepository.CreateCart(new ShoppingCart { CustomerId = userid });
             cart = await _shoppingCartRepository.GetCartByUserIdAsync(userid);
         }
         CartItem cartItem = new CartItem

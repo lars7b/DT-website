@@ -1,7 +1,8 @@
-using Backend.Services;
-using Microsoft.AspNetCore.Mvc;
 using Backend.Models;
+using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
 namespace Backend.Controllers;
 
 [Authorize]
@@ -16,8 +17,11 @@ public sealed class PaymentController : ControllerBase
         _paymentService = paymentService;
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Payment>> GetPaymentById(long id,CancellationToken cancellationToken)
+    [HttpGet("{id:long}")]
+    public async Task<ActionResult<Payment>> GetPaymentById(
+        long id,
+        CancellationToken cancellationToken
+    )
     {
         var payment = await _paymentService.GetPaymentByIdAsync(id, cancellationToken);
         if (payment == null)
@@ -28,15 +32,18 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments(
+        CancellationToken cancellationToken
+    )
     {
         // check if admin return all if not return only users payments
+        
         var payments = await _paymentService.GetAllPaymentsAsync(cancellationToken);
         return Ok(payments);
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreatePayment(Payment payment) // of order
+    public async Task<ActionResult> CreatePayment([FromBody] Payment payment) // of order
     {
         bool result = await _paymentService.CreatePaymentAsync(payment);
         if (result)
@@ -46,15 +53,19 @@ public sealed class PaymentController : ControllerBase
         return BadRequest();
     }
 
-    [Authorize(Roles="Admin")]
-    [HttpPut("{id}")]
-    public async Task<ActionResult> UpdatePayment(long id, Payment payment)
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:long}")]
+    public async Task<ActionResult> UpdatePayment(
+        long id,
+        Payment payment,
+        CancellationToken cancellationToken
+    )
     {
         if (id != payment.Id)
         {
             return BadRequest();
         }
-        bool succesful = await _paymentService.UpdatePaymentAsync(payment);
+        bool succesful = await _paymentService.UpdatePaymentAsync(payment, cancellationToken);
         if (succesful == false)
         {
             return BadRequest("Updating was unsuccesful");
@@ -62,11 +73,11 @@ public sealed class PaymentController : ControllerBase
         return NoContent();
     }
 
-    [Authorize(Roles="Admin")]
-    [HttpDelete("{id}")]
-    public async Task<ActionResult> DeletePayment(long id)
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id:long}")]
+    public async Task<ActionResult> DeletePayment(long id, CancellationToken cancellationToken)
     {
-        bool succesful = await _paymentService.DeletePaymentAsync(id);
+        bool succesful = await _paymentService.DeletePaymentAsync(id, cancellationToken);
         if (succesful == false)
         {
             return BadRequest("Deleting was unsuccesful");

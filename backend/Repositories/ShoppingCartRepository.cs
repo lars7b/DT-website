@@ -29,8 +29,10 @@ public class ShoppingCartRepository
 
     public async Task<List<CartItem>> GetAllItemsFromCartByUserId(long userId)
     {
+        //TODO users to cutsomers
+        
         var items = await _connection.QueryAsync<CartItem>(
-            $"SELECT * FROM cart_items AS items JOIN shopping_carts AS cart ON items.cart_id = cart.id JOIN users ON users.id = cart.customer_id WHERE users.id = @userId;",
+            $"SELECT * FROM cart_items AS items JOIN shopping_carts AS cart ON items.cart_id = cart.id JOIN customers ON customers.id = cart.customer_id WHERE customers.id = @userId;",
             new { userId }
         );
         return items.ToList();

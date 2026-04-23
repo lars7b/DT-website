@@ -1,6 +1,6 @@
-namespace Backend.Models;
+namespace Backend.DTOs;
 
-public sealed class Order
+public sealed class OrderdDto
 {
     public long Id { get; set; }
     public long CustomerId { get; set; }
@@ -9,5 +9,5 @@ public sealed class Order
     /// Status can be "Pending", "Processing", "Shipped", "Delivered", "Cancelled", etc.
     /// </summary>
     public string Status { get; set; } = "Pending";
-    public List<OrderItem> Items { get; set; } = new List<OrderItem>();
+    public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();
 }
