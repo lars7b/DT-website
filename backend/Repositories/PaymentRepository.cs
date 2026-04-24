@@ -1,9 +1,10 @@
 using Backend.Models;
-using Npgsql;
 using Dapper;
+using Npgsql;
+
 namespace Backend.Repositories;
 
-public class PaymentRepository
+public class PaymentRepository : IPaymentRepository
 {
     protected static readonly string _table = "payments";
     protected static readonly string _attributes = "amount, payment_date, payment_method, order_id";
@@ -23,7 +24,8 @@ public class PaymentRepository
         var payments = await _connection.QueryAsync<Payment>($"SELECT * FROM {_table}");
         return payments.ToList();
     }
-    public async Task<Payment?> GetById(long id,CancellationToken cancellationToken)
+
+    public async Task<Payment?> GetById(long id, CancellationToken cancellationToken)
     {
         var payment = await _connection.QueryFirstOrDefaultAsync<Payment>(
             $"SELECT * FROM {_table} WHERE id = @id",
@@ -31,44 +33,61 @@ public class PaymentRepository
         );
         return payment;
     }
+
     public async Task<bool> Add(Payment payment)
     {
-        string query = $"INSERT INTO payments ({_attributes}) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId);";
+        string query =
+            $"INSERT INTO payments ({_attributes}) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId);";
         var result = await _connection.ExecuteAsync(query, payment);
         return result > 0;
     }
+
     public async Task<bool> Update(Payment payment)
     {
-        string query = $"UPDATE payments SET amount = @Amount, payment_date = @PaymentDate, payment_method = @PaymentMethod, order_id = @OrderId WHERE id = @Id;";
+        string query =
+            "UPDATE payments SET amount = @Amount, payment_date = @PaymentDate, payment_method = @PaymentMethod, order_id = @OrderId WHERE id = @Id;";
         var result = await _connection.ExecuteAsync(query, payment);
         return result > 0;
     }
+
     public async Task<bool> Delete(Payment? payment)
     {
-        if (payment == null) return false;
-        string query = $"DELETE FROM payments WHERE id = @Id;";
+        if (payment == null)
+            return false;
+        string query = "DELETE FROM payments WHERE id = @Id;";
         var result = await _connection.ExecuteAsync(query, new { payment.Id });
         return result > 0;
     }
 
     public async Task<List<Payment>> GetByOrderId(long orderId)
     {
-        string query = $"SELECT * FROM payments WHERE order_id = @orderId;";
-        var payments = await _connection.QueryAsync<Payment>(query,new { orderId });
+        string query = "SELECT * FROM payments WHERE order_id = @orderId;";
+        var payments = await _connection.QueryAsync<Payment>(query, new { orderId });
         return payments.ToList();
     }
 
     public async Task<List<Payment>> GetByUser(long userId)
     {
-        string query = $"SELECT * FROM payments AS p JOIN orders AS o ON p.order_id = o.id JOIN customers AS c ON c.id=o.customer_id WHERE c.id=@userId;";
-        var payments = await _connection.QueryAsync<Payment>(query, new{userId});
+        string query = """
+            SELECT * FROM payments AS p 
+            JOIN orders AS o ON p.order_id = o.id 
+            JOIN customers AS c ON c.id=o.customer_id 
+            WHERE c.id=@userId;
+            """;
+        var payments = await _connection.QueryAsync<Payment>(query, new { userId });
         return payments.ToList();
     }
 
-    public async Task<decimal> GetAmountForOrder(Order order)
+    public async Task<decimal> GetAmountForOrder(long orderId)
     {
-        string query = "SELECT SUM(order_items.price) FROM order AS o JOIN order_items ON o.id = order_items.order_id WHERE o.id=@Id GROUP BY o.id;";
-        decimal amount = await _connection.ExecuteScalarAsync<decimal>(query, new{order.Id});
+        string query = """
+            SELECT SUM(order_items.price) 
+            FROM order AS o 
+            JOIN order_items ON o.id = order_items.order_id 
+            WHERE o.id=@Id 
+            GROUP BY o.id;0
+            """;
+        decimal amount = await _connection.ExecuteScalarAsync<decimal>(query, new { orderId });
         return amount;
     }
 }

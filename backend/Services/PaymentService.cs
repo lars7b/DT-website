@@ -1,28 +1,33 @@
 using Backend.Models;
 using Backend.Repositories;
 using Isopoh.Cryptography.Argon2;
+
 // TODO https://www.techrepublic.com/article/online-payment-security/
 namespace Backend.Services;
 
-
 public sealed class PaymentService : IPaymentService
 {
-    private readonly PaymentRepository _repository;
+    private readonly IPaymentRepository _repository;
 
-    public PaymentService(PaymentRepository repository)
+    public PaymentService(IPaymentRepository repository)
     {
         _repository = repository;
     }
 
     // use encryption
 
-    public async Task<Payment?> GetPaymentByIdAsync(long id, CancellationToken cancellationToken =default)
+    public async Task<Payment?> GetPaymentByIdAsync(
+        long id,
+        CancellationToken cancellationToken = default
+    )
     {
-        Payment? payment = await _repository.GetById(id,cancellationToken);
+        Payment? payment = await _repository.GetById(id, cancellationToken);
         return payment;
     }
 
-    public async Task<IEnumerable<Payment>> GetAllPaymentsAsync( CancellationToken cancellationToken =default)
+    public async Task<IEnumerable<Payment>> GetAllPaymentsAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         return await _repository.GetAll(cancellationToken);
     }
@@ -38,16 +43,19 @@ public sealed class PaymentService : IPaymentService
     {
         Payment payment = new Payment
         {
-            Amount = 0, //GetAmountForOrder(orderId), //
+            Amount = await _repository.GetAmountForOrder(orderId),
             PaymentDate = DateTime.Now,
             OrderId = orderId,
             PaymentMethod = method,
-            Status = "Paid"
+            Status = "Paid",
         };
         return await CreatePaymentAsync(payment);
     }
 
-    public async Task<bool> UpdatePaymentAsync(Payment payment,CancellationToken cancellationToken=default)
+    public async Task<bool> UpdatePaymentAsync(
+        Payment payment,
+        CancellationToken cancellationToken = default
+    )
     {
         Payment? existingPayment = await _repository.GetById(payment.Id, cancellationToken);
         if (existingPayment != null)
@@ -61,7 +69,10 @@ public sealed class PaymentService : IPaymentService
         return false;
     }
 
-    public async Task<bool> DeletePaymentAsync(long id,CancellationToken cancellationToken=default)
+    public async Task<bool> DeletePaymentAsync(
+        long id,
+        CancellationToken cancellationToken = default
+    )
     {
         Payment? payment = await _repository.GetById(id, cancellationToken);
         if (payment != null)

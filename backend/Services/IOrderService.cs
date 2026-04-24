@@ -1,11 +1,13 @@
-using Backend.Models;
+using Backend.DTOs;
+
 namespace Backend.Services;
 
 public interface IOrderService
 {
-    Task<Order?> GetOrderByIdAsync(long id, long userId);
-    Task<List<Order>> GetOrdersAsync(long userId);
+    Task<OrderDto?> GetOrderByIdAsync(long id, long userId, CancellationToken token);
+    Task<List<OrderDto>> GetOrdersAsync(long userId, CancellationToken token);
     Task<bool> CreateOrderAsync(long userid);
-    Task<bool> UpdateOrderAsync(Order order, long userId);
+    Task<bool> UpdateOrderAsync(OrderDto order, long userId);
     Task<bool> DeleteOrderAsync(long id, long userId);
+    Task<bool> CancelOrderAsync(long id, long userId);
 }

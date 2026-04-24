@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,11 @@ public sealed class PaymentController : ControllerBase
         CancellationToken cancellationToken
     )
     {
+        string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
         var payment = await _paymentService.GetPaymentByIdAsync(id, cancellationToken);
         if (payment == null)
         {
@@ -37,7 +43,12 @@ public sealed class PaymentController : ControllerBase
     )
     {
         // check if admin return all if not return only users payments
-        
+        string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        string? userrole = User.FindFirst(ClaimTypes.Role)?.Value;
+        if (userId == null || userrole == null)
+        {
+            return Unauthorized();
+        }
         var payments = await _paymentService.GetAllPaymentsAsync(cancellationToken);
         return Ok(payments);
     }
@@ -55,9 +66,12 @@ public sealed class PaymentController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpPut("{id:long}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    // [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> UpdatePayment(
         long id,
-        Payment payment,
+        [FromBody] Payment payment,
         CancellationToken cancellationToken
     )
     {

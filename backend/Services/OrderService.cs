@@ -1,6 +1,6 @@
+using Backend.DTOs;
 using Backend.Models;
 using Backend.Repositories;
-
 
 namespace Backend.Services;
 
@@ -13,40 +13,85 @@ public class OrderService : IOrderService
         _orderRepository = orderRepository;
     }
 
-    public async Task<Order?> GetOrderByIdAsync(long id, long userid)
+    public async Task<OrderDto?> GetOrderByIdAsync(
+        long id,
+        long userid,
+        CancellationToken token = default
+    )
     {
-        return await _orderRepository.GetOrderByIdAsync(id);
+        Order? order = await _orderRepository.GetOrderByIdAsync(id);
+        if (order == null)
+        {
+            return null;
+        }
+        OrderDto dto = new OrderDto
+        {
+            Id = order.Id,
+            CustomerId = order.CustomerId,
+            OrderDate = order.OrderDate,
+            Status = order.Status,
+        };
+        return dto;
     }
 
-    public async Task<List<Order>> GetOrdersAsync(long userid)
+    public async Task<List<OrderDto>> GetOrdersAsync(long userid, CancellationToken token = default)
     {
-        return await _orderRepository.GetOrdersAsync();
+        List<Order> orders = await _orderRepository.GetOrdersAsync();
+        List<OrderDto> dtos = new List<OrderDto>();
+        foreach (Order order in orders)
+        {
+            OrderDto dto = new OrderDto
+            {
+                Id = order.Id,
+                CustomerId = order.CustomerId,
+                OrderDate = order.OrderDate,
+                Status = order.Status,
+            };
+            dtos.Add(dto);
+        }
+        return dtos;
     }
 
     public async Task<bool> CreateOrderAsync(long userid)
     {
-
-        // Order order = new Order
-        // {
-        //     CustomerId = userid,
-        //     OrderDate = DateTime.UtcNow,
-        //     Status = "Pending"
-        //     // add each item from cart
-        // };
         return await _orderRepository.CreateOrder(userid);
     }
-    public async Task<bool> UpdateOrderAsync(Order order, long userid)
+
+    public async Task<bool> UpdateOrderAsync(OrderDto orderdto, long customerid)
     {
-        // check if not paid yet 
+        // check if not paid yet
         // check if user and if admin
-        throw new NotImplementedException();
+        Order order = new Order
+        {
+            CustomerId = customerid,
+            OrderDate = DateTime.UtcNow,
+            Status = "Pending",
+            // add each item from cart or make function for mapping dto and order
+        };
+        return await _orderRepository.UpdateOrder(order);
     }
-    public async Task<bool> DeleteOrderAsync(long id, long userId){
+
+    public async Task<bool> DeleteOrderAsync(long id, long userId)
+    {
         Order? order = await _orderRepository.GetOrderByIdAsync(id);
         // check for admin
-        if(order == null || order.CustomerId != userId && order.Status == "Pending"){
+        if (order == null || order.CustomerId != userId && order.Status == "Pending")
+        {
             return false;
         }
         return await _orderRepository.DeleteOrder(id);
+    }
+
+    public async Task<bool> CancelOrderAsync(long id, long userId)
+    {
+        Order? order = await _orderRepository.GetOrderByIdAsync(id);
+        // check for admin
+        if (order == null || order.CustomerId != userId || order.Status != "Pending")
+        {
+            return false;
+        }
+        // if cancelled succesfully should also change storage product in the store back to the amount
+        order.Status = "Cancelled";
+        return await _orderRepository.UpdateOrder(order);
     }
 }

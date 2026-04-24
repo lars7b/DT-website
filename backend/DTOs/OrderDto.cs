@@ -1,6 +1,6 @@
 namespace Backend.DTOs;
 
-public sealed class OrderdDto
+public sealed class OrderDto
 {
     public long Id { get; set; }
     public long CustomerId { get; set; }
