@@ -25,11 +25,11 @@ public sealed class PaymentController : ControllerBase
     )
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        if (userId == null) //TODO check if id is long
         {
             return Unauthorized();
         }
-        var payment = await _paymentService.GetPaymentByIdAsync(id, cancellationToken);
+        var payment = await _paymentService.GetPaymentByIdAsync(id,long.Parse(userId), cancellationToken);
         if (payment == null)
         {
             return NotFound();
@@ -37,7 +37,7 @@ public sealed class PaymentController : ControllerBase
         return Ok(payment);
     }
 
-    [HttpGet]
+    [HttpGet] //TODO add query for admin per user or ...
     public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments(
         CancellationToken cancellationToken
     )
@@ -49,14 +49,20 @@ public sealed class PaymentController : ControllerBase
         {
             return Unauthorized();
         }
-        var payments = await _paymentService.GetAllPaymentsAsync(cancellationToken);
+        var payments = await _paymentService.GetAllPaymentsAsync(long.Parse(userId),cancellationToken);
         return Ok(payments);
     }
 
     [HttpPost]
     public async Task<ActionResult> CreatePayment([FromBody] Payment payment) // of order
     {
-        bool result = await _paymentService.CreatePaymentAsync(payment);
+        string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        string? userrole = User.FindFirst(ClaimTypes.Role)?.Value;
+        if (userId == null || userrole == null)
+        {
+            return Unauthorized();
+        }
+        bool result = await _paymentService.CreatePaymentAsync(long.Parse(userId),payment);
         if (result)
         {
             return CreatedAtAction(nameof(GetPaymentById), new { id = payment.Id }, payment);

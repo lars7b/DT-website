@@ -18,28 +18,31 @@ public sealed class PaymentService : IPaymentService
 
     public async Task<Payment?> GetPaymentByIdAsync(
         long id,
+        long userid,
         CancellationToken cancellationToken = default
     )
     {
-        Payment? payment = await _repository.GetById(id, cancellationToken);
+        Payment? payment = await _repository.GetById(id, userid, cancellationToken);
         return payment;
     }
 
     public async Task<IEnumerable<Payment>> GetAllPaymentsAsync(
+        long userid,
         CancellationToken cancellationToken = default
     )
     {
-        return await _repository.GetAll(cancellationToken);
+        return await _repository.GetAll(userid, cancellationToken);
     }
 
-    public async Task<bool> CreatePaymentAsync(Payment payment)
+    public async Task<bool> CreatePaymentAsync(long userid, Payment payment)
     {
+        // TODO userid check
         // needs to check if order id exists and check price before create
         bool result = await _repository.Add(payment);
         return await Task.FromResult(result);
     }
 
-    public async Task<bool> CreatePaymentAsync(long orderId, string method)
+    public async Task<bool> CreatePaymentAsync(long userid, long orderId, string method)
     {
         Payment payment = new Payment
         {
@@ -49,7 +52,7 @@ public sealed class PaymentService : IPaymentService
             PaymentMethod = method,
             Status = "Paid",
         };
-        return await CreatePaymentAsync(payment);
+        return await CreatePaymentAsync(userid, payment);
     }
 
     public async Task<bool> UpdatePaymentAsync(
@@ -57,7 +60,7 @@ public sealed class PaymentService : IPaymentService
         CancellationToken cancellationToken = default
     )
     {
-        Payment? existingPayment = await _repository.GetById(payment.Id, cancellationToken);
+        Payment? existingPayment = await _repository.GetById(payment.Id, null, cancellationToken);
         if (existingPayment != null)
         {
             existingPayment.Amount = payment.Amount;
@@ -74,7 +77,7 @@ public sealed class PaymentService : IPaymentService
         CancellationToken cancellationToken = default
     )
     {
-        Payment? payment = await _repository.GetById(id, cancellationToken);
+        Payment? payment = await _repository.GetById(id, null, cancellationToken);
         if (payment != null)
         {
             return await _repository.Delete(payment);

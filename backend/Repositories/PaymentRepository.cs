@@ -4,10 +4,12 @@ using Npgsql;
 
 namespace Backend.Repositories;
 
+/// <summary>
+/// Repository for managing payments in the database.
+/// the attributes are amount, payment_date, payment_method, order_id
+/// </summary>
 public class PaymentRepository : IPaymentRepository
 {
-    protected static readonly string _table = "payments";
-    protected static readonly string _attributes = "amount, payment_date, payment_method, order_id";
     private readonly NpgsqlConnection _connection;
 
     public PaymentRepository(IConfiguration configuration)
@@ -19,17 +21,34 @@ public class PaymentRepository : IPaymentRepository
         _connection = new NpgsqlConnection(connectionString);
     }
 
-    public async Task<List<Payment>> GetAll(CancellationToken cancellationToken)
+    public async Task<List<Payment>> GetAll(long userid, CancellationToken cancellationToken)
     {
-        var payments = await _connection.QueryAsync<Payment>($"SELECT * FROM {_table}");
+        var payments = await _connection.QueryAsync<Payment>(
+            """
+            SELECT * FROM payments 
+            JOIN orders AS o ON p.order_id = o.id 
+            JOIN customers AS c ON c.id=o.customer_id 
+            JOIN users AS u ON u.id=c.user_id
+            WHERE c.id=@userId OR u.role = 'Admin';
+            """,
+            new { userId = userid }
+        );
         return payments.ToList();
     }
 
-    public async Task<Payment?> GetById(long id, CancellationToken cancellationToken)
+    public async Task<Payment?> GetById(long id, long? userid, CancellationToken cancellationToken)
     {
-        var payment = await _connection.QueryFirstOrDefaultAsync<Payment>(
-            $"SELECT * FROM {_table} WHERE id = @id",
-            new { id }
+        if (userid == null)
+        {
+            Payment? paymentNoUserid = await _connection.QueryFirstOrDefaultAsync<Payment>(
+                "SELECT * FROM payments WHERE id = @id;",
+                new { id }
+            );
+            return paymentNoUserid;
+        }
+        Payment? payment = await _connection.QueryFirstOrDefaultAsync<Payment>(
+            "SELECT * FROM payments WHERE id = @id AND order_id IN (SELECT id FROM orders WHERE customer_id = @userId)",
+            new { id, userId = userid }
         );
         return payment;
     }
@@ -37,7 +56,7 @@ public class PaymentRepository : IPaymentRepository
     public async Task<bool> Add(Payment payment)
     {
         string query =
-            $"INSERT INTO payments ({_attributes}) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId);";
+            "INSERT INTO payments (amount, payment_date, payment_method, order_id) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId);";
         var result = await _connection.ExecuteAsync(query, payment);
         return result > 0;
     }

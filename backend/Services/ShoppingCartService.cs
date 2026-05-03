@@ -6,10 +6,10 @@ using Backend.Repositories;
 
 public sealed class ShoppingCartService : IShoppingCartService
 {
-    //TODO implement IShoppingCartRepository
-    private readonly ShoppingCartRepository _shoppingCartRepository;
+    // TODO implement IShoppingCartRepository
+    private readonly IShoppingCartRepository _shoppingCartRepository;
 
-    public ShoppingCartService(ShoppingCartRepository shoppingCartRepository)
+    public ShoppingCartService(IShoppingCartRepository shoppingCartRepository)
     {
         _shoppingCartRepository = shoppingCartRepository;
     }

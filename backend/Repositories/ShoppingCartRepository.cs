@@ -5,7 +5,7 @@ using Dapper;
 using Npgsql;
 
 // handles cart_items and shopping_carts tables
-public class ShoppingCartRepository //: IShoppingCartRepository
+public class ShoppingCartRepository : IShoppingCartRepository
 {
     private readonly NpgsqlConnection _connection;
 
@@ -82,10 +82,11 @@ public class ShoppingCartRepository //: IShoppingCartRepository
         {
             string query =
                 "UPDATE cart_items SET product_id = @ProductId, quantity = @Quantity WHERE id = @Id AND cart_id=@CartId;";
-            result += await _connection.ExecuteAsync(query, cart.Items[i]); //could use overload 
+            result += await _connection.ExecuteAsync(query, cart.Items[i]); //could use overload
         }
         return result > 0;
     }
+
     public async Task<bool> UpdateItems(CartItem items)
     {
         string query =
@@ -104,13 +105,13 @@ public class ShoppingCartRepository //: IShoppingCartRepository
     public async Task<bool> DeleteItemAsync(long cartItemId, long userId)
     {
         string query = """
-        DELETE FROM cart_items AS ci 
-        JOIN shopping_carts AS sc ON sc.id = ci.cart_id 
-        JOIN customers AS c ON sc.customer_id = c.id
-        JOIN users AS u ON c.user_id=u.id
-        WHERE ci.id = @Id AND sc.customer_id =@Userid OR u.role = "Admin";
-        """;
-        var result = await _connection.ExecuteAsync(query, new { cartItemId,userId });
+            DELETE FROM cart_items AS ci 
+            JOIN shopping_carts AS sc ON sc.id = ci.cart_id 
+            JOIN customers AS c ON sc.customer_id = c.id
+            JOIN users AS u ON c.user_id=u.id
+            WHERE ci.id = @Id AND sc.customer_id =@Userid OR u.role = "Admin";
+            """;
+        var result = await _connection.ExecuteAsync(query, new { cartItemId, userId });
         return result > 0;
     }
 }
