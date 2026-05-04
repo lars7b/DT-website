@@ -29,7 +29,7 @@ public sealed class PaymentController : ControllerBase
         {
             return Unauthorized();
         }
-        var payment = await _paymentService.GetPaymentByIdAsync(id,long.Parse(userId), cancellationToken);
+        Payment? payment = await _paymentService.GetPaymentByIdAsync(id,long.Parse(userId), cancellationToken);
         if (payment == null)
         {
             return NotFound();

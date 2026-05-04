@@ -18,12 +18,14 @@ public sealed class ShoppingCartService : IShoppingCartService
     {
         // should be one to one relationship so could be found with user id
         List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(
-            userId
+            userId,token
         );
-        if (cartItems == null || cartItems.Count == 0)
+        // TODO check role
+        if (cartItems == null || cartItems.Count < 1)
         {
             return null;
         }
+         // check why id is 0 when returned 
         var cartItemsDtos = cartItems
             .Select(item => new CartItemDto
             {
@@ -49,6 +51,8 @@ public sealed class ShoppingCartService : IShoppingCartService
             await _shoppingCartRepository.CreateCart(new ShoppingCart { CustomerId = userid });
             cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
         }
+        // TODO check if product exists
+        // check if items exists and if there is quantity change
         CartItem cartItem = new CartItem
         {
             ProductId = items.ProductId,

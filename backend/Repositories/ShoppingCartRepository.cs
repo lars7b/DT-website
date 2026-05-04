@@ -27,15 +27,14 @@ public class ShoppingCartRepository : IShoppingCartRepository
         return cart;
     }
 
-    public async Task<List<CartItem>> GetAllItemsFromCartByCustomerId(long userId)
+    public async Task<List<CartItem>> GetAllItemsFromCartByCustomerId(long userId,CancellationToken token)
     {
         var items = await _connection.QueryAsync<CartItem>(
             """
-            SELECT * FROM cart_items AS items \
-            JOIN shopping_carts AS cart ON items.cart_id = cart.id 
-            JOIN customers ON customers.id = cart.customer_id 
-            JOIN users ON customers.user_id = users.id
-            WHERE customers.id = @userId OR users.role = "Admin";
+            SELECT items.* FROM cart_items AS items
+            JOIN shopping_carts AS carts ON items.cart_id = carts.id 
+            JOIN customers ON customers.id = carts.customer_id 
+            WHERE customers.id = @userId;
             """,
             new { userId }
         );
@@ -45,7 +44,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
     public async Task<bool> AddItem(CartItem entity)
     {
         string query =
-            "INSERT INTO shopping_carts (cart_id,product_id,quantity) VALUES (@CartId,@PorductId,@Quantity);";
+            "INSERT INTO cart_items (cart_id,product_id,quantity) VALUES (@CartId,@ProductId,@Quantity);";
         int result = await _connection.ExecuteAsync(query, entity);
         return result > 0;
     }

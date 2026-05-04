@@ -19,7 +19,7 @@ public class OrderService : IOrderService
         CancellationToken token = default
     )
     {
-        Order? order = await _orderRepository.GetOrderByIdAsync(id);
+        Order? order = await _orderRepository.GetOrderByIdAsync(id,userid);
         if (order == null)
         {
             return null;
@@ -36,7 +36,8 @@ public class OrderService : IOrderService
 
     public async Task<List<OrderDto>> GetOrdersAsync(long userid, CancellationToken token = default)
     {
-        List<Order> orders = await _orderRepository.GetOrdersAsync();
+        //TODO
+        List<Order> orders = await _orderRepository.GetOrdersAsync(userid);
         List<OrderDto> dtos = new List<OrderDto>();
         foreach (Order order in orders)
         {
@@ -73,7 +74,7 @@ public class OrderService : IOrderService
 
     public async Task<bool> DeleteOrderAsync(long id, long userId)
     {
-        Order? order = await _orderRepository.GetOrderByIdAsync(id);
+        Order? order = await _orderRepository.GetOrderByIdAsync(id,userId);
         // check for admin
         if (order == null || order.CustomerId != userId && order.Status == "Pending")
         {
@@ -84,9 +85,9 @@ public class OrderService : IOrderService
 
     public async Task<bool> CancelOrderAsync(long id, long userId)
     {
-        Order? order = await _orderRepository.GetOrderByIdAsync(id);
+        Order? order = await _orderRepository.GetOrderByIdAsync(id,userId);
         // check for admin
-        if (order == null || order.CustomerId != userId || order.Status != "Pending")
+        if (order == null ||order.Status != "Pending")//|| order.CustomerId != userId )
         {
             return false;
         }

@@ -42,7 +42,7 @@ public sealed class PaymentService : IPaymentService
         return await Task.FromResult(result);
     }
 
-    public async Task<bool> CreatePaymentAsync(long userid, long orderId, string method)
+    public async Task<bool> CreatePaymentAsync(long userid, long orderId, string method) //beter dto
     {
         Payment payment = new Payment
         {
@@ -55,6 +55,12 @@ public sealed class PaymentService : IPaymentService
         return await CreatePaymentAsync(userid, payment);
     }
 
+    /// <summary>
+    /// updates payment if exists
+    /// </summary>
+    /// <param name="payment"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<bool> UpdatePaymentAsync(
         Payment payment,
         CancellationToken cancellationToken = default
@@ -67,21 +73,14 @@ public sealed class PaymentService : IPaymentService
             existingPayment.PaymentDate = payment.PaymentDate;
             existingPayment.PaymentMethod = payment.PaymentMethod;
             existingPayment.OrderId = payment.OrderId;
+            existingPayment.Status = payment.Status;
             return await _repository.Update(existingPayment);
         }
         return false;
     }
 
-    public async Task<bool> DeletePaymentAsync(
-        long id,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<bool> DeletePaymentAsync(long id,CancellationToken cancellationToken = default)
     {
-        Payment? payment = await _repository.GetById(id, null, cancellationToken);
-        if (payment != null)
-        {
-            return await _repository.Delete(payment);
-        }
-        return false;
+        return await _repository.Delete(id);
     }
 }

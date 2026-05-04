@@ -14,7 +14,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 // onderzoek naar:  https://docs.fluentvalidation.net/en/latest/aspnet.html?highlight=build
 // builder.Services.AddFluentValidationAutoValidation();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.UTF8.GetBytes(jwtSettings!=null&&jwtSettings["Key"]!=null?jwtSettings["Key"]:"RandomKey");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
 builder.Services.AddAuthentication(options =>
 {

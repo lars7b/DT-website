@@ -6,7 +6,7 @@ namespace Backend.Repositories;
 
 /// <summary>
 /// Repository for managing payments in the database.
-/// the attributes are amount, payment_date, payment_method, order_id
+/// the attributes are amount, payment_date, payment_method, order_id ,status
 /// </summary>
 public class PaymentRepository : IPaymentRepository
 {
@@ -25,11 +25,18 @@ public class PaymentRepository : IPaymentRepository
     {
         var payments = await _connection.QueryAsync<Payment>(
             """
-            SELECT * FROM payments 
+            SELECT 
+                p.id,
+                p.amount,
+                p.payment_date,
+                p.payment_method,
+                p.order_id,
+                p.status
+            FROM payments AS p
             JOIN orders AS o ON p.order_id = o.id 
             JOIN customers AS c ON c.id=o.customer_id 
             JOIN users AS u ON u.id=c.user_id
-            WHERE c.id=@userId OR u.role = 'Admin';
+            WHERE (c.id = @userId AND u.role != 'Admin') OR u.role = 'Admin';
             """,
             new { userId = userid }
         );
@@ -38,6 +45,7 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<Payment?> GetById(long id, long? userid, CancellationToken cancellationToken)
     {
+        // if no user id is given then the user is admin
         if (userid == null)
         {
             Payment? paymentNoUserid = await _connection.QueryFirstOrDefaultAsync<Payment>(
@@ -47,7 +55,13 @@ public class PaymentRepository : IPaymentRepository
             return paymentNoUserid;
         }
         Payment? payment = await _connection.QueryFirstOrDefaultAsync<Payment>(
-            "SELECT * FROM payments WHERE id = @id AND order_id IN (SELECT id FROM orders WHERE customer_id = @userId)",
+            """
+            SELECT p.*
+            FROM payments p
+            JOIN orders o ON p.order_id = o.id
+            JOIN customers c ON o.customer_id = c.id
+            WHERE p.id = @id AND c.user_id = @userId
+            """,
             new { id, userId = userid }
         );
         return payment;
@@ -56,7 +70,7 @@ public class PaymentRepository : IPaymentRepository
     public async Task<bool> Add(Payment payment)
     {
         string query =
-            "INSERT INTO payments (amount, payment_date, payment_method, order_id) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId);";
+            "INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId, @Status);";
         var result = await _connection.ExecuteAsync(query, payment);
         return result > 0;
     }
@@ -64,17 +78,15 @@ public class PaymentRepository : IPaymentRepository
     public async Task<bool> Update(Payment payment)
     {
         string query =
-            "UPDATE payments SET amount = @Amount, payment_date = @PaymentDate, payment_method = @PaymentMethod, order_id = @OrderId WHERE id = @Id;";
+            "UPDATE payments SET amount = @Amount, payment_date = @PaymentDate, payment_method = @PaymentMethod, order_id = @OrderId, status = @Status WHERE id = @Id;";
         var result = await _connection.ExecuteAsync(query, payment);
         return result > 0;
     }
 
-    public async Task<bool> Delete(Payment? payment)
+    public async Task<bool> Delete(long Id)
     {
-        if (payment == null)
-            return false;
         string query = "DELETE FROM payments WHERE id = @Id;";
-        var result = await _connection.ExecuteAsync(query, new { payment.Id });
+        var result = await _connection.ExecuteAsync(query, new { Id });
         return result > 0;
     }
 
@@ -88,7 +100,14 @@ public class PaymentRepository : IPaymentRepository
     public async Task<List<Payment>> GetByUser(long userId)
     {
         string query = """
-            SELECT * FROM payments AS p 
+            SELECT 
+                p.id,
+                p.amount,
+                p.payment_date,
+                p.payment_method,
+                p.order_id,
+                p.status
+            FROM payments AS p 
             JOIN orders AS o ON p.order_id = o.id 
             JOIN customers AS c ON c.id=o.customer_id 
             WHERE c.id=@userId;
@@ -101,10 +120,10 @@ public class PaymentRepository : IPaymentRepository
     {
         string query = """
             SELECT SUM(order_items.price) 
-            FROM order AS o 
+            FROM orders AS o 
             JOIN order_items ON o.id = order_items.order_id 
-            WHERE o.id=@Id 
-            GROUP BY o.id;0
+            WHERE o.id=@orderId 
+            GROUP BY o.id;
             """;
         decimal amount = await _connection.ExecuteScalarAsync<decimal>(query, new { orderId });
         return amount;

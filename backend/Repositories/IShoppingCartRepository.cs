@@ -13,7 +13,7 @@ public interface IShoppingCartRepository
 
     public  Task<ShoppingCart?> GetCartByCustomerIdAsync(long userId);
 
-    public  Task<List<CartItem>> GetAllItemsFromCartByCustomerId(long userId);
+    public  Task<List<CartItem>> GetAllItemsFromCartByCustomerId(long userId, CancellationToken token);
 
     public  Task<bool> AddItem(CartItem entity);
 
