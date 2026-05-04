@@ -63,10 +63,11 @@ public class ProductRepository
         var products = new List<Product>();
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var ordinals = GetOrdinals(reader);
 
         while (await reader.ReadAsync(cancellationToken))
         {
-            products.Add(MapProduct(reader));
+            products.Add(MapProduct(reader, ordinals));
         }
 
         return products;
@@ -100,31 +101,55 @@ public class ProductRepository
             return null;
         }
 
-        return MapProduct(reader);
+        var ordinals = GetOrdinals(reader);
+        return MapProduct(reader, ordinals);
     }
 
-    private static Product MapProduct(NpgsqlDataReader reader)
+    private static ProductOrdinals GetOrdinals(NpgsqlDataReader reader)
+    {
+        return new ProductOrdinals(
+            reader.GetOrdinal("id"),
+            reader.GetOrdinal("name"),
+            reader.GetOrdinal("description"),
+            reader.GetOrdinal("price"),
+            reader.GetOrdinal("category_id"),
+            reader.GetOrdinal("subcategory_id"),
+            reader.GetOrdinal("category_name"),
+            reader.GetOrdinal("subcategory_name"));
+    }
+
+    private static Product MapProduct(NpgsqlDataReader reader, ProductOrdinals ordinals)
     {
         return new Product
         {
-            Id = reader.GetInt32(reader.GetOrdinal("id")),
-            Name = reader.GetString(reader.GetOrdinal("name")),
-            Description = reader.IsDBNull(reader.GetOrdinal("description"))
+            Id = reader.GetInt32(ordinals.Id),
+            Name = reader.GetString(ordinals.Name),
+            Description = reader.IsDBNull(ordinals.Description)
                 ? null
-                : reader.GetString(reader.GetOrdinal("description")),
-            Price = reader.GetDecimal(reader.GetOrdinal("price")),
-            CategoryId = reader.IsDBNull(reader.GetOrdinal("category_id"))
+                : reader.GetString(ordinals.Description),
+            Price = reader.GetDecimal(ordinals.Price),
+            CategoryId = reader.IsDBNull(ordinals.CategoryId)
                 ? null
-                : reader.GetInt32(reader.GetOrdinal("category_id")),
-            SubcategoryId = reader.IsDBNull(reader.GetOrdinal("subcategory_id"))
+                : reader.GetInt32(ordinals.CategoryId),
+            SubcategoryId = reader.IsDBNull(ordinals.SubcategoryId)
                 ? null
-                : reader.GetInt32(reader.GetOrdinal("subcategory_id")),
-            CategoryName = reader.IsDBNull(reader.GetOrdinal("category_name"))
+                : reader.GetInt32(ordinals.SubcategoryId),
+            CategoryName = reader.IsDBNull(ordinals.CategoryName)
                 ? null
-                : reader.GetString(reader.GetOrdinal("category_name")),
-            SubcategoryName = reader.IsDBNull(reader.GetOrdinal("subcategory_name"))
+                : reader.GetString(ordinals.CategoryName),
+            SubcategoryName = reader.IsDBNull(ordinals.SubcategoryName)
                 ? null
-                : reader.GetString(reader.GetOrdinal("subcategory_name"))
+                : reader.GetString(ordinals.SubcategoryName)
         };
     }
+
+    private record ProductOrdinals(
+        int Id,
+        int Name,
+        int Description,
+        int Price,
+        int CategoryId,
+        int SubcategoryId,
+        int CategoryName,
+        int SubcategoryName);
 }
