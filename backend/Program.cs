@@ -11,11 +11,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<CategoryRepository>();
 builder.Services.AddScoped<SubcategoryRepository>();
+builder.Services.AddScoped<FavoriteRepository>();
 
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 
 var app = builder.Build();
 
