@@ -1,29 +1,48 @@
 using Backend.Models;
+using Backend.DTOs;
 using Backend.Repositories;
 
 namespace Backend.Services;
 
 public class CustomerService : ICustomerService
 {
-private readonly ICustomerRepository _customerRepository;
+    private readonly ICustomerRepository _customerRepository;
 
     public CustomerService(ICustomerRepository customerRepository)
     {
         _customerRepository = customerRepository;
     }
 
-    public async Task<Customer> GetCustomerAsync(int id)
+    public async Task<CustomerDto?> GetCustomerAsync(int userId)
     {
-        return await _customerRepository.GetCustomerAsync(id);
+        var customer = await _customerRepository.GetCustomerAsync(userId);
+
+        if (customer == null) return null;
+
+        return new CustomerDto
+        {
+            FirstName = customer.FirstName,
+            LastName = customer.LastName,
+            Phone = customer.Phone,
+            Address = customer.Address
+        };
     }
 
-    public async Task<bool> UpdateCustomerAsync(int id, Customer customer)
+    public async Task<(bool Success, string Message)> UpdateCustomerAsync(int userId, CustomerDto customerDetails)
     {
-        return await _customerRepository.UpdateCustomerAsync(id, customer);
+        var updateStatus = await _customerRepository.UpdateCustomerAsync(userId, customerDetails);
+
+        if (!updateStatus) return (false, "Update failed.");
+
+        return (true, "Customer details updated.");
     }
 
-    public async Task<List<Order>> GetCustomerOrdersAsync(int id)
+    public async Task<(bool Success, string Message)> DeleteCustomerAsync(int userId)
     {
-    return await _customerRepository.GetCustomerOrdersAsync(id);
+        var deleteStatus = await _customerRepository.DeleteCustomerAsync(userId);
+        
+        if (!deleteStatus) return (false, "Deletion failed.");
+        
+        return (true, "Customer deleted.");
     }
 }

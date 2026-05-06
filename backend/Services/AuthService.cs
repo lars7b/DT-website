@@ -50,6 +50,31 @@ public class AuthService : IAuthService
         return GenerateJwtToken(user);
     }
 
+    public async Task<(bool Success, string Message)> ChangePasswordAsync(int userId, ChangePasswordDto passwordDetails)
+    {
+        User? user = await _userRepository.GetUserByIdAsync(userId);
+        if(user == null) return (false, "Update failed.");
+        bool isValid = Argon2.Verify(user.PasswordHash, passwordDetails.CurrentPassword);
+        if (!isValid) return (false, "Update failed.");
+
+        string newPasswordHash = Argon2.Hash(passwordDetails.NewPassword);
+        var updateStatus = await _userRepository.ChangePasswordAsync(userId, newPasswordHash);
+       
+        if (!updateStatus) return (false, "Update failed.");
+
+        return (true, "Password changed successfully.");
+    }
+
+    public async Task<(bool Success, string Message)> ChangeEmailAsync(int userId, ChangeEmailDto emailDetails)
+    {
+        var updateStatus = _userRepository.ChangeEmailAsync(userId, emailDetails.NewEmail);
+       
+        if (updateStatus == null) return (false, "Update failed.");
+
+        return (true, "Email changed successfully.");
+
+    }
+
     private string GenerateJwtToken(User user)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");

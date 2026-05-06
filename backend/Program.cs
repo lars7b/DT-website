@@ -1,6 +1,7 @@
 using Backend.Repositories;
 using Backend.Services;
 using Backend.Validators;
+using FluentValidation.AspNetCore;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -46,10 +47,12 @@ builder.Services.AddCors(options =>
 
 // dependency injection
 // every user gets their own database connection, destroyed after use.
-builder.Services.AddScoped<CustomerRepository>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
 var app = builder.Build();
 
@@ -60,3 +63,4 @@ app.MapControllers(); // Maps api routes
 
 app.Run();
 
+public partial class Program { } // maakt de class public zodat het testproject er toegang toe heeft

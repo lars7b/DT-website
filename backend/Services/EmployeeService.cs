@@ -1,3 +1,4 @@
+using Backend.DTOs;
 using Backend.Models;
 using Backend.Repositories;
 
@@ -6,33 +7,19 @@ namespace Backend.Services;
 public class EmployeeService : IEmployeeService
 {
     private readonly IEmployeeRepository _employeeRepository;
-    private readonly ICustomerRepository _customerRepository;
 
-    public EmployeeService(
-        IEmployeeRepository employeeRepository, 
-        ICustomerRepository customerRepository)
+    public EmployeeService(IEmployeeRepository employeeRepository)
     {
         _employeeRepository = employeeRepository;
-        _customerRepository = customerRepository;
     }
 
-    public async Task<List<Customer>> GetAllCustomersAsync()
+    public async Task<EmployeeDto> GetEmployeeProfileAsync(int employeeId)
     {
-        return await _employeeRepository.GetAllCustomersAsync();
+        return default;
     }
 
-    public async Task<Customer> GetCustomerAsync(int id)
+    public async Task<(bool Success, string Message)> UpdateEmployeeAsync(int employeeId, EmployeeDto request)
     {
-        return await _customerRepository.GetCustomerAsync(id);
-    }
-
-    public async Task<List<Order>> GetCustomerOrdersAsync(int id)
-    {
-        return await _employeeRepository.GetCustomerOrdersAsync(id);
-    }
-
-    public async Task<bool> DeleteCustomerAsync(int id)
-    {
-        return await _employeeRepository.DeleteCustomerAsync(id);
+        return default;
     }
 }

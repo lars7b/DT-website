@@ -3,6 +3,7 @@ using Backend.DTOs;
 using Backend.Services;
 using Backend.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Backend.Controllers;
 
@@ -20,39 +21,76 @@ public class CustomerController : ControllerBase
 
     private int GetUserIdFromToken()
     {
-        // helper method om ID uit JWT te halen.
-        return 0;
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        return int.Parse(userIdClaim!.Value);
     }
 
 
     [HttpGet("me")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<Customer>> GetMyProfile()
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CustomerDto>> GetMyProfile()
     {
         int userId = GetUserIdFromToken();
+        var customerDto = await _customerService.GetCustomerAsync(userId);
 
+        if (customerDto == null) return NotFound(new { message = "Profiel niet gevonden." });
+        return Ok(customerDto);
 
-        return default;
+    }
+
+    [HttpPatch("me")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateProfile([FromBody] CustomerDto request)
+    {
+        int userId = GetUserIdFromToken();
+        var result = await _customerService.UpdateCustomerAsync(userId, request);
+
+        if (!result.Success)
+        {
+            return NotFound(new { message = result.Message });
+        }
+        return Ok(new { message = result.Message });
     }
 
     [HttpPut("me")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult> UpdateProfile([FromBody] CustomerDto request)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteProfile()
     {
         int userId = GetUserIdFromToken();
+        var result = await _customerService.DeleteCustomerAsync(userId);
 
-        return default;
+        if (!result.Success)
+        {
+            return NotFound(new { message = result.Message });
+        }
+        return Ok(new { message = result.Message });      
     }
 
-    [HttpGet("me/orders")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<Order>>> GetMyOrders()
-    {
-        int userId = GetUserIdFromToken();
 
-        return default;
+    /* 
+    Eventuele andere endpoints
 
-        //Bestel geschiedenis voor 1 klant.
-        //JOIN tussen orders en order_items
-    }
+    Wishlist
+    GET api/customer/me/wishlist
+    Haalt een lijst op van alle opgeslagen producten (vaak geretourneerd als een lijst van ProductDto of WishlistItemDto).
+    POST api/customer/me/wishlist/{productId}
+    Voegt een specifiek product toe aan de verlanglijst van de klant.
+    DELETE api/customer/me/wishlist/{productId}
+    Verwijdert een specifiek product van de verlanglijst.
+
+    Adressenboek
+    GET api/customer/me/addresses
+    Haalt alle geregistreerde adressen van de klant op.
+    POST api/customer/me/addresses
+    Voegt een nieuw aflever- of factuuradres toe.
+    PUT api/customer/me/addresses/{addressId}
+    Wijzigt een specifiek bestaand adres.
+    DELETE api/customer/me/addresses/{addressId}
+    Verwijdert een specifiek adres uit het profiel.
+    
+    */
+
 }

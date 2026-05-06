@@ -1,11 +1,10 @@
 using Backend.Models;
+using Backend.DTOs;
 
 namespace Backend.Services;
 
 public interface IEmployeeService
 {
-    Task<List<Customer>> GetAllCustomersAsync();
-    Task<Customer> GetCustomerAsync(int id);
-    Task<List<Order>> GetCustomerOrdersAsync(int id);
-    Task<bool> DeleteCustomerAsync(int id);
+    Task<EmployeeDto> GetEmployeeProfileAsync(int employeeId);
+    Task<(bool Success, string Message)> UpdateEmployeeAsync(int employeeId, EmployeeDto request);
 }

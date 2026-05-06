@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
 
@@ -14,6 +16,12 @@ public class AuthController : ControllerBase
     public AuthController(IAuthService authService)
     {
         _authService = authService;
+    }
+
+    private int GetUserIdFromToken()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        return int.Parse(userIdClaim!.Value);
     }
 
     [HttpPost("register")]
@@ -36,8 +44,38 @@ public class AuthController : ControllerBase
     {
         var token = await _authService.LoginAsync(request);
 
-        if (token == null) return Unauthorized(new {message = "Ongeldig e-mailadres of wachtwoord"});
+        if (token == null) return Unauthorized(new { message = "Ongeldig e-mailadres of wachtwoord" });
 
-        return Ok(new { token = token });
+        return Ok(new { token });
+    }
+
+    [Authorize]
+    [HttpPut("change-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto request)
+    {
+        int userId = GetUserIdFromToken();
+
+        var result = await _authService.ChangePasswordAsync(userId, request);
+        if (!result.Success)
+        {
+            return Conflict(new { message = result.Message });
+        }
+        return Ok(new { message = result.Message });
+    }
+
+    [Authorize]
+    [HttpPut("change-email")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangeEmail([FromBody] ChangeEmailDto request)
+    {
+        int userId = GetUserIdFromToken();
+
+        var result = await _authService.ChangeEmailAsync(userId, request);
+        if (!result.Success)
+        {
+            return Conflict(new { message = result.Message });
+        }
+        return Ok(new { message = result.Message });
     }
 }

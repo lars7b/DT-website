@@ -1,10 +1,11 @@
 using Backend.Models;
+using Backend.DTOs;
 
 namespace Backend.Repositories;
 
 public interface ICustomerRepository
 {
-    Task<Customer> GetCustomerAsync(int id);
-    Task<bool> UpdateCustomerAsync(int id, Customer customer);
-    Task<List<Order>> GetCustomerOrdersAsync(int id);
+    Task<Customer?> GetCustomerAsync(int userId);
+    Task<bool> UpdateCustomerAsync(int userId, CustomerDto customer);
+    Task<bool> DeleteCustomerAsync(int userId);
 }
