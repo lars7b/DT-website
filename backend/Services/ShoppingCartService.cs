@@ -6,7 +6,6 @@ using Backend.Repositories;
 
 public sealed class ShoppingCartService : IShoppingCartService
 {
-    // TODO implement IShoppingCartRepository
     private readonly IShoppingCartRepository _shoppingCartRepository;
 
     public ShoppingCartService(IShoppingCartRepository shoppingCartRepository)
@@ -17,16 +16,14 @@ public sealed class ShoppingCartService : IShoppingCartService
     public async Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(long userId, CancellationToken token =default)
     {
         // should be one to one relationship so could be found with user id
-        List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(
-            userId,token
-        );
+        List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(userId,token);
         // TODO check role
         if (cartItems == null || cartItems.Count < 1)
         {
             return null;
         }
-         // check why id is 0 when returned 
-        var cartItemsDtos = cartItems
+        // check why id is 0 when returned
+        List<CartItemDto> cartItemsDtos = cartItems
             .Select(item => new CartItemDto
             {
                 Id = item.Id,
@@ -38,28 +35,44 @@ public sealed class ShoppingCartService : IShoppingCartService
         return new ShoppingCartDto
         {
             Id = cartItems.First().CartId,
-            CustomerId = userId,
+            CustomerId = userId, ///
             Items = cartItemsDtos,
         };
     }
-
+ 
     public async Task<bool> AddItemsAsync(long userid, CartItemDto items)
     {
-        ShoppingCart? cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
-        if (cart == null || cart.Id == null)
-        {
-            await _shoppingCartRepository.CreateCart(new ShoppingCart { CustomerId = userid });
-            cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
-        }
-        // TODO check if product exists
-        // check if items exists and if there is quantity change
+        // ShoppingCart? cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
+        // if (cart == null || cart.Id == null)
+        // {
+        //     await _shoppingCartRepository.CreateCart(new ShoppingCart { CustomerId = userid });
+        //     cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid); // get card from create method
+        // }
+        // // // TODO check if product exists + check if quantity is valid + fix logic
+        // // for(int i=0;i<cart.Items.Count;i++)
+        // // {
+        // //     if(cart.Items[i].ProductId == items.ProductId){
+        // //         cart.Items[i].Quantity = items.Quantity; //could be +=
+        // //         return await _shoppingCartRepository.UpdateItems(cart.Items[i]);
+        // //     }
+        // // }
+        // CartItem cartItem = new CartItem
+        // {
+        //     ProductId = items.ProductId,
+        //     Quantity = items.Quantity,
+        //     CartId = cart!.Id,
+        // };
+        // return await _shoppingCartRepository.AddItem(cartItem);
+
+
         CartItem cartItem = new CartItem
         {
             ProductId = items.ProductId,
             Quantity = items.Quantity,
-            CartId = cart!.Id,
+            CartId = items.Id,
         };
-        return await _shoppingCartRepository.AddItem(cartItem);
+        return await _shoppingCartRepository.AddItemToCartAsync(userid,cartItem);
+        // throw new NotImplementedException();
     }
 
     public async Task<bool> UpdateItemsAsync(long userId, CartItemDto item)

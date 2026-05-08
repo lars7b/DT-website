@@ -4,62 +4,152 @@ using Backend.Models;
 using Dapper;
 using Npgsql;
 
-// handles cart_items and shopping_carts tables
+/// <summary>
+/// handles cart_items and shopping_carts tables
+/// cart_items has the following attributes : id, cart_id,product_id,quantity
+/// shopping_carts has the following attributes : id, customer_id
+/// </summary>
 public class ShoppingCartRepository : IShoppingCartRepository
 {
-    private readonly NpgsqlConnection _connection;
+    //https://dappertutorial.net/dapper-transaction-third-party-library
+    private readonly string _connectionString;
 
     public ShoppingCartRepository(IConfiguration configuration)
     {
-        string connectionString =
+        _connectionString =
             configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DB Connection missing");
-
-        _connection = new NpgsqlConnection(connectionString);
     }
 
-    public async Task<ShoppingCart?> GetCartByCustomerIdAsync(long userId)
+    public async Task<ShoppingCart?> GetCartByCustomerIdAsync(long userId,NpgsqlConnection? connection = null,
+        NpgsqlTransaction? transaction = null, CancellationToken token = default)
     {
-        ShoppingCart? cart = await _connection.QueryFirstOrDefaultAsync<ShoppingCart>(
-            "SELECT * FROM shopping_carts WHERE customer_id = @userId LIMIT 1;",
-            new { userId }
+        if (connection == null)
+        {
+            connection = new NpgsqlConnection(_connectionString);
+        }
+        ShoppingCart? cart = await connection.QueryFirstOrDefaultAsync<ShoppingCart>(
+            @"SELECT sc.* FROM shopping_carts AS sc
+            JOIN customers AS c ON sc.customer_id = c.id
+            WHERE c.user_id = @userId 
+            LIMIT 1;",
+            // "SELECT * FROM get_all_items_from_cart;",
+            new { userId },transaction
         );
         return cart;
     }
 
-    public async Task<List<CartItem>> GetAllItemsFromCartByCustomerId(long userId,CancellationToken token)
+    public async Task<List<CartItem>> GetAllItemsFromCartByCustomerId(
+        long userId,
+        CancellationToken token
+    )
     {
-        var items = await _connection.QueryAsync<CartItem>(
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        IEnumerable<CartItem> items = await connection.QueryAsync<CartItem>(
             """
-            SELECT items.* FROM cart_items AS items
+            SELECT items.id,items.cart_id AS cartid,items.product_id AS productid,items.quantity
+            FROM cart_items AS items
             JOIN shopping_carts AS carts ON items.cart_id = carts.id 
             JOIN customers ON customers.id = carts.customer_id 
-            WHERE customers.id = @userId;
-            """,
+            JOIN users ON users.id = customers.user_id 
+            WHERE users.id = @userId;
+            """, //chekc admin
             new { userId }
         );
         return items.ToList();
     }
 
-    public async Task<bool> AddItem(CartItem entity)
+    public async Task<bool> AddItem(
+        CartItem entity,
+        NpgsqlConnection? con = null,
+        NpgsqlTransaction? transaction = null
+    )
     {
         string query =
             "INSERT INTO cart_items (cart_id,product_id,quantity) VALUES (@CartId,@ProductId,@Quantity);";
-        int result = await _connection.ExecuteAsync(query, entity);
+
+        if (con == null)
+        {
+            con = new NpgsqlConnection(_connectionString);
+        }
+        int result = await con.ExecuteAsync(query, entity,transaction);
         return result > 0;
     }
 
-    public async Task<bool> CreateCart(ShoppingCart cart)
+    public async Task<ShoppingCart> CreateCart(
+        ShoppingCart cart,
+        NpgsqlConnection? con = null,
+        NpgsqlTransaction? transaction = null
+    )
     {
-        string query = "INSERT INTO shopping_carts (customer_id) VALUES (@CustomerId);";
-        int result = await _connection.ExecuteAsync(query, cart);
-        return result > 0;
+        string query =
+            @"INSERT INTO shopping_carts (customer_id) VALUES (@CustomerId)
+            RETURNING *;";
+        if (con == null)
+        {
+            con = new NpgsqlConnection(_connectionString);
+        }
+        ShoppingCart result = await con.QuerySingleAsync<ShoppingCart>(query, cart,transaction);
+        return result;
+    }
+    public async Task<long> CreateCart(
+        long user_id,
+        NpgsqlConnection? con = null,
+        NpgsqlTransaction? transaction = null
+    )
+    {
+        string query =
+            @"INSERT INTO shopping_carts (customer_id)
+            Select id from customers 
+            where user_id = @User_id
+            RETURNING id;";
+        if (con == null)
+        {
+            con = new NpgsqlConnection(_connectionString);
+        }
+        long result = await con.QuerySingleAsync<long>(query, new {user_id},transaction);
+        return result;
+    }
+
+    public async Task<bool> AddItemToCartAsync(long userId, CartItem item)
+    {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        try
+        {
+            ShoppingCart? cart = await GetCartByCustomerIdAsync(userId,connection,transaction);
+            long cartid = 0;
+            if (cart == null)
+            {
+                cartid = await CreateCart(userId,connection,transaction);
+            }
+            else{cartid=cart.Id;}
+            // // // TODO check if product exists + check if quantity is valid + fix logic
+            // // for(int i=0;i<cart.Items.Count;i++)
+            // // {
+            // //     if(cart.Items[i].ProductId == items.ProductId){
+            // //         cart.Items[i].Quantity = items.Quantity; //could be +=
+            // //         return await _shoppingCartRepository.UpdateItems(cart.Items[i]);
+            // //     }
+            // // }
+            item.CartId = cartid;
+            bool result = await AddItem(item, connection,transaction);
+            await transaction.CommitAsync();
+            return result;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<ShoppingCart?> GetCartById(long id)
     {
-        ShoppingCart? cart = await _connection.QueryFirstOrDefaultAsync<ShoppingCart>(
-            $"SELECT * FROM shopping_carts WHERE id = @id",
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        ShoppingCart? cart = await connection.QueryFirstOrDefaultAsync<ShoppingCart>(
+            "SELECT * FROM shopping_carts WHERE id = @id",
             new { id }
         );
         return cart;
@@ -67,8 +157,9 @@ public class ShoppingCartRepository : IShoppingCartRepository
 
     public async Task<CartItem?> GetItemById(long id)
     {
-        CartItem? item = await _connection.QueryFirstOrDefaultAsync<CartItem>(
-            $"SELECT * FROM cart_items WHERE id = @id",
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        CartItem? item = await connection.QueryFirstOrDefaultAsync<CartItem>(
+            "SELECT * FROM cart_items WHERE id = @id",
             new { id }
         );
         return item;
@@ -76,41 +167,45 @@ public class ShoppingCartRepository : IShoppingCartRepository
 
     public async Task<bool> UpdateItems(ShoppingCart cart)
     {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         int result = 0;
         for (int i = 0; i < cart.Items.Count; i++)
         {
             string query =
                 "UPDATE cart_items SET product_id = @ProductId, quantity = @Quantity WHERE id = @Id AND cart_id=@CartId;";
-            result += await _connection.ExecuteAsync(query, cart.Items[i]); //could use overload
+            result += await connection.ExecuteAsync(query, cart.Items[i]); //could use overload
         }
         return result > 0;
     }
 
     public async Task<bool> UpdateItems(CartItem items)
     {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query =
             "UPDATE cart_items SET product_id = @ProductId, quantity = @Quantity WHERE id = @Id AND cart_id=@CartId;";
-        int result = await _connection.ExecuteAsync(query, items);
+        int result = await connection.ExecuteAsync(query, items);
         return result > 0;
     }
 
     public async Task<bool> DeleteCartAsync(ShoppingCart cart) // can send cartid and userid then check if users cart or if user admin
     {
-        string query = $"DELETE FROM shopping_carts WHERE id = @Id;";
-        var result = await _connection.ExecuteAsync(query, new { cart.Id });
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        string query = "DELETE FROM shopping_carts WHERE id = @Id;";
+        int result = await connection.ExecuteAsync(query, new { cart.Id });
         return result > 0;
     }
 
     public async Task<bool> DeleteItemAsync(long cartItemId, long userId)
     {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = """
             DELETE FROM cart_items AS ci 
-            JOIN shopping_carts AS sc ON sc.id = ci.cart_id 
+            USING shopping_carts AS sc
             JOIN customers AS c ON sc.customer_id = c.id
             JOIN users AS u ON c.user_id=u.id
-            WHERE ci.id = @Id AND sc.customer_id =@Userid OR u.role = "Admin";
+            WHERE sc.id = ci.cart_id  AND ci.id = @Id AND (u.id =@Userid OR u.role = 'Admin');
             """;
-        var result = await _connection.ExecuteAsync(query, new { cartItemId, userId });
+        int result = await connection.ExecuteAsync(query, new { Id = cartItemId, Userid = userId });
         return result > 0;
     }
 }
