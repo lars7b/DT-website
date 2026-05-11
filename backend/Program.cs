@@ -11,11 +11,13 @@ builder.Services.AddScoped<CategoryRepository>();
 builder.Services.AddScoped<SubcategoryRepository>();
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<FavoriteRepository>();
+builder.Services.AddScoped<OrderHistoryRepository>();
 
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+builder.Services.AddScoped<IOrderHistoryService, OrderHistoryService>();
 
 var app = builder.Build();
 
