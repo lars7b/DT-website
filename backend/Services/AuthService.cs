@@ -67,12 +67,11 @@ public class AuthService : IAuthService
 
     public async Task<(bool Success, string Message)> ChangeEmailAsync(int userId, ChangeEmailDto emailDetails)
     {
-        var updateStatus = _userRepository.ChangeEmailAsync(userId, emailDetails.NewEmail);
+        var updateStatus = await _userRepository.ChangeEmailAsync(userId, emailDetails.NewEmail);
        
-        if (updateStatus == null) return (false, "Update failed.");
+        if (!updateStatus) return (false, "Update failed.");
 
         return (true, "Email changed successfully.");
-
     }
 
     private string GenerateJwtToken(User user)
