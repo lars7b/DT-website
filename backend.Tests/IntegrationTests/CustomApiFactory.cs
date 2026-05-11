@@ -17,6 +17,13 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .WithPassword("postgres")
         .Build();
 
+    public CustomApiFactory()
+    {
+        Environment.SetEnvironmentVariable("JwtSettings__Key", "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!");
+        Environment.SetEnvironmentVariable("JwtSettings__Issuer", "TestIssuer");
+        Environment.SetEnvironmentVariable("JwtSettings__Audience", "TestAudience");
+    }
+
     public async ValueTask InitializeAsync()
     {
         await _dbContainer.StartAsync();
