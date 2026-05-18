@@ -1,8 +1,5 @@
 using Backend.Repositories;
 using Backend.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +40,15 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 
+// session config
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = ".StoreApp.Session";
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.IsEssential = true;
+});
+
 // dependency injection
 // every user gets their own database connection, destroyed after use.
 // builder.Services.AddScoped<ICustomerRepository,CustomerRepository>();
@@ -78,8 +84,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowReactApp"); 
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseSession(); // Enables middleware
 app.MapControllers(); // Maps api routes
 
 app.Run();
