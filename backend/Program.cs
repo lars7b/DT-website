@@ -21,7 +21,6 @@ builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 builder.Services.AddScoped<IOrderHistoryService, OrderHistoryService>();
-builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
