@@ -22,14 +22,17 @@ export default function Navbar() {
       <div className="nav-actions flex space-x-5 text-gray-600 items-center">
         <button className="search-button hover:text-black">🔍</button>
         
-        {/* Schakel dynamisch tussen de uitlogknop of het inlogpoppetje op basis van de context status */}
+        {/* Schakel dynamisch tussen de profielknop en inlogpoppetje */}
         {isLoggedIn ? (
-          <button 
-            onClick={logout} 
-            className="logout-button text-sm font-semibold text-red-600 hover:text-red-700 cursor-pointer"
-          >
-            Uitloggen
-          </button>
+          <div className="flex items-center space-x-4">
+            <Link to="/profiel" className="text-sm font-semibold hover:text-black">Mijn Profiel</Link>
+            <button 
+              onClick={logout} 
+              className="text-sm font-semibold text-red-600 hover:text-red-700 cursor-pointer"
+            >
+              Uitloggen
+            </button>
+          </div>
         ) : (
           <Link to="/login" className="account-button hover:text-black text-lg">👤</Link>
         )}
