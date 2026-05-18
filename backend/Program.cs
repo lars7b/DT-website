@@ -1,37 +1,41 @@
-
 using Backend.Repositories;
 using Backend.Services;
-using Backend.Validators;
-using FluentValidation;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddOpenApi();
 
-// dependency injection
-// every user gets their own database connection, destroyed after use.
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<SubcategoryRepository>();
+builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<FavoriteRepository>();
+builder.Services.AddScoped<OrderHistoryRepository>();
+builder.Services.AddScoped<IPaymentRepository,PaymentRepository>();
+builder.Services.AddScoped<IShoppingCartRepository, ShoppingCartRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+builder.Services.AddScoped<IOrderHistoryService, OrderHistoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
-builder.Services.AddScoped<IPaymentRepository,PaymentRepository>();
-builder.Services.AddScoped<IShoppingCartRepository, ShoppingCartRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-
 var app = builder.Build();
 
-app.UseCors("AllowReactApp"); 
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers(); // Maps api routes
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+app.UseHttpsRedirection();
+
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
