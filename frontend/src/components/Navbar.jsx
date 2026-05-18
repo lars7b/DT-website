@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   // Haal de status en de logout functie op uit de AuthContext
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, isAdmin, logout } = useAuth();
 
   return (
     <nav className="navbar-container flex items-center justify-between px-8 py-4 border-b border-gray-200 bg-white">
@@ -25,11 +25,18 @@ export default function Navbar() {
         {/* Schakel dynamisch tussen de profielknop en inlogpoppetje */}
         {isLoggedIn ? (
           <div className="flex items-center space-x-4">
-            <Link to="/profiel" className="text-sm font-semibold hover:text-black">Mijn Profiel</Link>
-            <button 
-              onClick={logout} 
-              className="text-sm font-semibold text-red-600 hover:text-red-700 cursor-pointer"
-            >
+            {/* Stuur admins naar /admin, en klanten naar /profiel */}
+            {isAdmin ? (
+              <Link to="/admin" className="text-sm font-bold text-blue-600 hover:text-blue-800">
+                Admin Dashboard
+              </Link>
+            ) : (
+              <Link to="/profiel" className="text-sm font-semibold hover:text-black">
+                Mijn Profiel
+              </Link>
+            )}
+            
+            <button onClick={logout} className="text-sm font-semibold text-red-600 hover:text-red-700 cursor-pointer">
               Uitloggen
             </button>
           </div>

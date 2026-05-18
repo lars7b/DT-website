@@ -1,45 +1,57 @@
 // src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
-// De Context aanmaken
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
+  const [role, setRole] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
+  // Helper functie om de rol uit de token te halen
+  const extractRoleFromToken = (jwt) => {
+    try {
+      const decoded = jwtDecode(jwt);
+      // .NET zet de rol vaak in deze specifieke ClaimType URI, of gewoon in 'role'
+      return decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decoded.role || 'Customer';
+    } catch (error) {
+      console.error("Fout bij decoderen JWT", error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    // Bij het opstarten van de app controleren we of er al een token in localStorage staat
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
       setToken(storedToken);
+      setRole(extractRoleFromToken(storedToken));
     }
     setAuthLoading(false);
   }, []);
 
-  // Functie die wordt aangeroepen na een succesvolle login request
   const login = (newToken) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
+    setRole(extractRoleFromToken(newToken));
   };
 
-  // Functie om uit te loggen
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
+    setRole(null);
   };
 
-  // Helper om snel te zien of de gebruiker is ingelogd
   const isLoggedIn = !!token;
+  const isAdmin = role === 'Admin' || role === 'Employee'; // Afhankelijk van wie in het dashboard mag
 
   return (
-    <AuthContext.Provider value={{ token, isLoggedIn, login, logout, authLoading }}>
+    <AuthContext.Provider value={{ token, role, isLoggedIn, isAdmin, login, logout, authLoading }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom hook om de auth context gemakkelijk te gebruiken in andere componenten
 export function useAuth() {
   return useContext(AuthContext);
 }
