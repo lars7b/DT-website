@@ -77,16 +77,16 @@ public class OrderController : ControllerBase
     [HttpPost("{orderid:long}/items")] // can be put
     public async Task<ActionResult> AddItemToOrderAsync(long orderid,[FromBody] OrderItemDto item)
     {
-        // check if order is already paid for if yes return badrequest
+        // check if order is already paid for if yes return badrequest or possibly send another payment request to user?
         // also check if item is already in order if yes update quantity instead of adding new item or make separate endpoint for updating quantity
         throw new NotImplementedException();
     }
 
     [Authorize(Roles="Admin")]
-    [HttpDelete("items/{id:long}")] // can be put
+    [HttpDelete("items/{id:long}")]
     public async Task<ActionResult> RemoveItemFromOrderAsync(long id)
     {
-        // check if order is already paid for if yes return badrequest
+        // check if order is already paid for if yes return badrequest or send money back to user?
         throw new NotImplementedException();
     }
 
@@ -94,11 +94,8 @@ public class OrderController : ControllerBase
     [HttpPut("{id:long}")]
     public async Task<ActionResult> UpdateOrder(long id, [FromBody] OrderDto order)
     {
-        throw new NotImplementedException();
-        // // get user id and use
-        // long userId=1;
-        // await _orderService.UpdateOrderAsync(order,userId);
-        // return NoContent();
+        await _orderService.UpdateOrderAsync(order,id);
+        return NoContent();
     }
 
     [Authorize]

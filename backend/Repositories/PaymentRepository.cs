@@ -35,7 +35,13 @@ public class PaymentRepository : IPaymentRepository
             JOIN orders AS o ON p.order_id = o.id 
             JOIN customers AS c ON c.id=o.customer_id 
             JOIN users AS u ON u.id=c.user_id
-            WHERE (c.id = @userId AND u.role != 'Admin') OR u.role = 'Admin';
+            WHERE
+                c.user_id = @userId
+                OR EXISTS (
+                    SELECT 1
+                    FROM users admin_user
+                    WHERE admin_user.id = @userId
+                    AND admin_user.role = 'Admin');
             """,
             new { userId = userid }
         );
@@ -60,7 +66,13 @@ public class PaymentRepository : IPaymentRepository
             FROM payments p
             JOIN orders o ON p.order_id = o.id
             JOIN customers c ON o.customer_id = c.id
-            WHERE p.id = @id AND c.user_id = @userId
+            WHERE p.id = @id AND (
+                c.user_id = @userId
+                OR EXISTS (
+                    SELECT 1
+                    FROM users admin_user
+                    WHERE admin_user.id = @userId
+                    AND admin_user.role = 'Admin');
             """,
             new { id, userId = userid }
         );
@@ -93,7 +105,7 @@ public class PaymentRepository : IPaymentRepository
         return result > 0;
     }
 
-    public async Task<List<Payment>> GetByOrderId(long orderId)
+    public async Task<List<Payment>> GetByOrderId(long orderId,CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = "SELECT * FROM payments WHERE order_id = @orderId;";
@@ -101,7 +113,7 @@ public class PaymentRepository : IPaymentRepository
         return payments.ToList();
     }
 
-    public async Task<List<Payment>> GetByUser(long userId)
+    public async Task<List<Payment>> GetByUser(long userId,CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = """
@@ -121,7 +133,7 @@ public class PaymentRepository : IPaymentRepository
         return payments.ToList();
     }
 
-    public async Task<decimal> GetAmountForOrder(long orderId)
+    public async Task<decimal> GetAmountForOrder(long orderId,CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = """

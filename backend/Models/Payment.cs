@@ -7,7 +7,7 @@ public sealed class Payment
     public DateTime PaymentDate { get; set; }
     public string PaymentMethod { get; set; } = string.Empty;
     /// <summary>
-    /// Status can be "Pending", "Completed", "Failed", etc.
+    /// Status can be "Pending", "Completed" or "Paid", "Failed", etc.
     /// </summary>
     public string Status { get; set; } = "Pending";
     public long OrderId { get; set; }

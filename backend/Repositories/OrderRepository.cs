@@ -20,14 +20,22 @@ public class OrderRepository : IOrderRepository
             ?? throw new InvalidOperationException("DB Connection missing");
     }
 
-    public async Task<Order?> GetOrderByIdAsync(long id, long? userId)
+    public async Task<Order?> GetOrderByIdAsync(
+        long id,
+        long? userId,
+        CancellationToken token = default
+    )
     { //
-        await using var _connection = new NpgsqlConnection(_connectionString);
+        await using NpgsqlConnection _connection = new NpgsqlConnection(_connectionString);
 
         if (userId == null)
         {
             string sql = """
-                SELECT o.id, o.customer_id AS customerid ,o.order_date AS orderdate,o.status
+                SELECT 
+                    o.id, 
+                    o.customer_id AS customerid,
+                    o.order_date AS orderdate,
+                    o.status
                 FROM orders AS o
                 JOIN order_items AS items ON items.order_id = o.id 
                 WHERE o.id = @id;
@@ -38,12 +46,23 @@ public class OrderRepository : IOrderRepository
         else
         {
             string sql = """
-                SELECT o.id, o.customer_id AS customerid ,o.order_date AS orderdate,o.status
+                SELECT 
+                o.id, 
+                o.customer_id AS customerid ,
+                o.order_date AS orderdate,
+                o.status
                 FROM orders AS o
                 JOIN order_items AS items ON items.order_id = o.id 
                 JOIN customers ON customers.id = o.customer_id 
-                JOIN users AS u ON customers.user_id = u.id
-                WHERE (customers.user_id = @userId OR u.role = 'Admin') AND o.id = @id;
+                WHERE 
+                    o.id = @id AND 
+                    (customers.user_id = @userId
+                    OR EXISTS (
+                        SELECT 1
+                        FROM users admin_user
+                        WHERE admin_user.id = @userId
+                        AND admin_user.role = 'Admin'
+                    ));
                 """;
             Order? order = await _connection.QueryFirstOrDefaultAsync<Order>(
                 sql,
@@ -51,83 +70,78 @@ public class OrderRepository : IOrderRepository
             );
             return order;
         }
-        // throw new NotImplementedException();
         // https://stackoverflow.com/questions/7508322/how-do-i-map-lists-of-nested-objects-with-dapper
-
-        // var sql =
-        //     @"SELECT o.*,items.*
-        //         FROM orders AS o
-        //         INNER JOIN order_items AS items ON o.id = items.order_id
-        //         WHERE o.id = @id AND o.customer_id = @userId";// add for admin
-
-        // // var sql =
-        // //     @"SELECT o.*,items.*
-        // //         FROM orders AS o
-        // //         INNER JOIN order_items AS items ON o.Id = items.order_id";
-        // var orders = await _connection.QueryAsync<Order, List<OrderItem>, Order?>(
-        //     sql,
-        //     (order, items) =>
-        //     { // userid will make problem fix TODO
-        //         order.Items = items;
-        //         // if(order.Id=id && order.CustomerId=userId){return order;}
-        //         return null;
-        //     },
-        //     splitOn: "order_id"
-        // );
-        // return orders.First();
     }
 
-    public async Task<OrderItem?> GetOrderItemByIdAsync(long id, long? userId)
+    public async Task<OrderItem?> GetOrderItemByIdAsync(
+        long id,
+        long? userId,
+        CancellationToken token = default
+    )
     { //
-        await using var _connection = new NpgsqlConnection(_connectionString);
+        await using NpgsqlConnection _connection = new NpgsqlConnection(_connectionString);
         OrderItem? order = await _connection.QueryFirstOrDefaultAsync<OrderItem>(
             """
             SELECT items.id, items.order_id AS orderid, items.product_id AS productid, items.quantity, items.price
             FROM order_items AS items
             JOIN orders AS o ON items.order_id = o.id 
             JOIN customers ON customers.id = o.customer_id 
-            WHERE customers.id = @userId AND o.id = @id;
+            WHERE o.id = @id AND (
+                customers.user_id = @userId
+                OR EXISTS (
+                    SELECT 1
+                    FROM users admin_user
+                    WHERE admin_user.id = @userId
+                    AND admin_user.role = 'Admin');
             """,
             new { userId, id }
         );
         return order;
-        throw new NotImplementedException();
     }
 
-    public async Task<List<Order>> GetOrdersAsync(long? userId)
+    public async Task<List<Order>> GetOrdersAsync(long? userId, CancellationToken token = default)
     {
-        // https://stackoverflow.com/questions/7472088/correct-use-of-multimapping-in-dapper
-        // https://www.learndapper.com/relationships
-        // https://dappertutorial.net/query
-        await using var _connection = new NpgsqlConnection(_connectionString);
-        string sql =
-            @"SELECT 
-            o.id, 
-            o.customer_id AS customerid,
-            o.order_date AS orderdate,
-            o.status, 
-            items.id, 
-            items.order_id AS orderid, 
-            items.product_id AS productid, 
-            items.quantity, 
-            items.price
-                FROM orders AS o 
-                INNER JOIN order_items AS items ON o.Id = items.order_id";
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
 
-        // IEnumerable<Order> orders = await _connection.QueryAsync<Order, List<OrderItem>, Order>(
-        //     sql,
-        //     (order, items) =>
-        //     {
-        //         order.Items = items;
-        //         return order;
-        //     },
-        //     splitOn: "orderid"
-        // );
-        // return orders.ToList();
+        string sql = """
+            SELECT
+                o.id,
+                o.customer_id AS CustomerId,
+                o.order_date AS OrderDate,
+                o.status,
+
+                items.id,
+                items.order_id AS OrderId,
+                items.product_id AS ProductId,
+                items.quantity,
+                items.price
+
+            FROM orders AS o
+            INNER JOIN order_items items
+                ON o.id = items.order_id
+            """;
+
+        if (userId != null)
+        {
+            sql += """
+                JOIN customers AS c
+                    ON c.id = o.customer_id
+                JOIN users AS u
+                    ON u.id = c.user_id
+                WHERE
+                    c.user_id = @userId
+                    OR EXISTS (
+                        SELECT 1
+                        FROM users admin_user
+                        WHERE admin_user.id = @userId
+                        AND admin_user.role = 'Admin'
+                    );
+                """;
+        }
 
         var orderDict = new Dictionary<long, Order>();
 
-        var orders = await _connection.QueryAsync<Order, OrderItem, Order>(
+        await connection.QueryAsync<Order, OrderItem, Order>(
             sql,
             (order, item) =>
             {
@@ -135,50 +149,29 @@ public class OrderRepository : IOrderRepository
                 {
                     existingOrder = order;
                     existingOrder.Items = new List<OrderItem>();
+
                     orderDict.Add(existingOrder.Id, existingOrder);
                 }
 
                 existingOrder.Items.Add(item);
+
                 return existingOrder;
             },
-            splitOn: "orderid"
+            new { userId },
+            splitOn: "id"
         );
 
         return orderDict.Values.ToList();
-
-        // var items = await _connection.QueryAsync<OrderItem>(
-        //     """
-        //     SELECT items.* FROM order_items AS items
-        //     JOIN orders AS o ON items.order_id = o.id
-        //     JOIN customers ON customers.id = o.customer_id
-        //     WHERE customers.id = @userId;
-        //     """,
-        //     new { userId }
-        // );
-        // return items.ToList();
-        ///
-        // var items = await _connection.QueryAsync<Order>(
-        //     """
-        //     SELECT o.*, items.*
-        //     FROM order_items AS items
-        //     JOIN orders AS o ON items.order_id = o.id
-        //     JOIN customers ON customers.id = o.customer_id
-        //     WHERE customers.id = @userId;
-        //     """,
-        //     new { userId }
-        // );
-        // return items.ToList();
-        throw new NotImplementedException();
     }
 
     public async Task<bool> CreateOrder(long userId)
     {
-        await using var _connection = new NpgsqlConnection(_connectionString);
+        await using NpgsqlConnection _connection = new NpgsqlConnection(_connectionString);
         await _connection.OpenAsync();
         using var transaction = await _connection.BeginTransactionAsync();
         try
         {
-            var orderId = await _connection.ExecuteScalarAsync<long>(
+            long orderId = await _connection.ExecuteScalarAsync<long>(
                 """
                 INSERT INTO orders (customer_id, order_date, status)
                 SELECT c.id, NOW(), 'Pending'
@@ -190,8 +183,7 @@ public class OrderRepository : IOrderRepository
                 new { userId },
                 transaction
             );
-            // 2. Copy cart items → order items
-            var resultitems = await _connection.ExecuteAsync(
+            int resultitems = await _connection.ExecuteAsync(
                 """
                 INSERT INTO order_items (order_id, product_id, quantity, price)
                 SELECT 
@@ -209,7 +201,6 @@ public class OrderRepository : IOrderRepository
                 new { orderId, userId },
                 transaction
             );
-            // 3. (Optional but recommended) clear cart
             await _connection.ExecuteAsync(
                 """
                 DELETE FROM cart_items
@@ -223,8 +214,20 @@ public class OrderRepository : IOrderRepository
                 new { userId },
                 transaction
             );
+            resultitems += await _connection.ExecuteAsync(
+                """
+                INSERT INTO order_status_history (order_id, status, status_date)
+                VALUES (@orderId, @status, CURRENT_DATE);
+                """,
+                new { orderId, status = "Pending" },
+                transaction
+            );
+            if (orderId != 0)
+            {
+                resultitems++;
+            }
             await transaction.CommitAsync();
-            return resultitems > 0;
+            return resultitems > 2;
         }
         catch
         {
@@ -234,26 +237,53 @@ public class OrderRepository : IOrderRepository
     }
 
     /// <summary>
+    /// only status gets updated
     /// orderdate and customer id arent being updated
+    /// the reason is that customer should stay the same and orderdate is date of creation
     /// </summary>
-    /// <param name="order"></param>
-    /// <returns></returns>
+    /// <param name="order">the order you want to update</param>
+    /// <returns>if the updating was succesful</returns>
     public async Task<bool> UpdateOrder(Order order)
     {
-        await using var _connection = new NpgsqlConnection(_connectionString);
-        string query = """
-            UPDATE orders SET status = @Status WHERE id = @Id;
-            """;
-        int result = await _connection.ExecuteAsync(
-            query,
-            new { Status = order.Status, Id = order.Id }
-        );
-
-        return result > 0;
+        await using NpgsqlConnection _connection = new NpgsqlConnection(_connectionString);
+        await _connection.OpenAsync();
+        using var transaction = await _connection.BeginTransactionAsync();
+        try
+        {
+            string query = """
+                UPDATE orders SET status = @Status 
+                JOIN payments AS p ON p.order_id = orders.id
+                WHERE id = @Id AND (p.status = 'Paid' OR p.status = 'Completed');
+                """;
+            int result = await _connection.ExecuteAsync(
+                query,
+                new { Status = order.Status, Id = order.Id },
+                transaction
+            );
+            result += await _connection.ExecuteAsync(
+                """
+                INSERT INTO order_status_history (order_id, status, status_date)
+                VALUES (@orderId, @status, current_timestamp);
+                """,
+                new { orderId = order.Id, status = order.Status },
+                transaction
+            );
+            await transaction.CommitAsync();
+            return result == 2;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<bool> DeleteOrder(long id)
     {
-        throw new NotImplementedException();
+        // order items also get deleted bc its on delete cascade with order_id
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        string query = "DELETE FROM orders WHERE id = @Id;";
+        int result = await connection.ExecuteAsync(query, new { id });
+        return result == 1;
     }
 }

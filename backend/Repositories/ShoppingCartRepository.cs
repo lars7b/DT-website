@@ -12,6 +12,7 @@ using Npgsql;
 public class ShoppingCartRepository : IShoppingCartRepository
 {
     //https://dappertutorial.net/dapper-transaction-third-party-library
+    // https://www.conradakunga.com/blog/dapper-part-10-handling-cancellations/
     private readonly string _connectionString;
 
     public ShoppingCartRepository(IConfiguration configuration)
@@ -51,9 +52,8 @@ public class ShoppingCartRepository : IShoppingCartRepository
             FROM cart_items AS items
             JOIN shopping_carts AS carts ON items.cart_id = carts.id 
             JOIN customers ON customers.id = carts.customer_id 
-            JOIN users ON users.id = customers.user_id 
-            WHERE users.id = @userId;
-            """, //chekc admin
+            WHERE customers.user_id = @userId;
+            """,
             new { userId }
         );
         return items.ToList();
@@ -92,6 +92,14 @@ public class ShoppingCartRepository : IShoppingCartRepository
         ShoppingCart result = await con.QuerySingleAsync<ShoppingCart>(query, cart,transaction);
         return result;
     }
+
+    /// <summary>
+    /// creates a cart for the user/customer if it doesn't exist and returns the cart id
+    /// </summary>
+    /// <param name="user_id">the id of the user that made this request, they have to be a customer for this to work</param>
+    /// <param name="con">connection</param>
+    /// <param name="transaction">transaction that its running on</param>
+    /// <returns>the id of the created cart</returns>
     public async Task<long> CreateCart(
         long user_id,
         NpgsqlConnection? con = null,
@@ -125,7 +133,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
                 cartid = await CreateCart(userId,connection,transaction);
             }
             else{cartid=cart.Id;}
-            // // // TODO check if product exists + check if quantity is valid + fix logic
+            // // // TODO check if product exists + fix logic
             // // for(int i=0;i<cart.Items.Count;i++)
             // // {
             // //     if(cart.Items[i].ProductId == items.ProductId){
@@ -145,7 +153,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
         }
     }
 
-    public async Task<ShoppingCart?> GetCartById(long id)
+    public async Task<ShoppingCart?> GetCartById(long id,CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         ShoppingCart? cart = await connection.QueryFirstOrDefaultAsync<ShoppingCart>(
@@ -155,7 +163,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
         return cart;
     }
 
-    public async Task<CartItem?> GetItemById(long id)
+    public async Task<CartItem?> GetItemById(long id,CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         CartItem? item = await connection.QueryFirstOrDefaultAsync<CartItem>(

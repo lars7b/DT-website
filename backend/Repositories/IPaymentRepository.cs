@@ -10,8 +10,8 @@ public interface IPaymentRepository
     public Task<bool> Update(Payment payment);
     public Task<bool> Delete(long id);
 
-    public Task<List<Payment>> GetByOrderId(long orderId);
-    public Task<List<Payment>> GetByUser(long userId);
+    public Task<List<Payment>> GetByOrderId(long orderId,CancellationToken token = default);
+    public Task<List<Payment>> GetByUser(long userId,CancellationToken token = default);
 
-    public Task<decimal> GetAmountForOrder(long orderId);
+    public Task<decimal> GetAmountForOrder(long orderId,CancellationToken token = default);
 }

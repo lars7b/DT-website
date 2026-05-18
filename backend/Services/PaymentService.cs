@@ -58,8 +58,8 @@ public sealed class PaymentService : IPaymentService
     /// <summary>
     /// updates payment if exists
     /// </summary>
-    /// <param name="payment"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="payment">the payment you want to update</param>
+    /// /// <param name="cancellationToken">cancellation token for the get method</param>
     /// <returns></returns>
     public async Task<bool> UpdatePaymentAsync(
         Payment payment,
@@ -79,7 +79,7 @@ public sealed class PaymentService : IPaymentService
         return false;
     }
 
-    public async Task<bool> DeletePaymentAsync(long id,CancellationToken cancellationToken = default)
+    public async Task<bool> DeletePaymentAsync(long id)
     {
         return await _repository.Delete(id);
     }

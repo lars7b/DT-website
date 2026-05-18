@@ -58,16 +58,13 @@ public class OrderService : IOrderService
         return await _orderRepository.CreateOrder(userid);
     }
 
-    public async Task<bool> UpdateOrderAsync(OrderDto orderdto, long customerid)
+    public async Task<bool> UpdateOrderAsync(OrderDto orderdto,long id)
     {
-        // check if not paid yet
-        // check if user and if admin
         Order order = new Order
         {
-            CustomerId = customerid,
-            OrderDate = DateTime.UtcNow,
-            Status = "Pending",
-            // add each item from cart or make function for mapping dto and order
+            Id = id,
+            Status = orderdto.Status,
+            // TODO add each item from cart or make function for mapping dto and order
         };
         return await _orderRepository.UpdateOrder(order);
     }
@@ -75,8 +72,7 @@ public class OrderService : IOrderService
     public async Task<bool> DeleteOrderAsync(long id, long userId)
     {
         Order? order = await _orderRepository.GetOrderByIdAsync(id,userId);
-        // check for admin
-        if (order == null || order.CustomerId != userId && order.Status == "Pending")
+        if (order == null || order.Status != "Pending")
         {
             return false;
         }
@@ -86,8 +82,7 @@ public class OrderService : IOrderService
     public async Task<bool> CancelOrderAsync(long id, long userId)
     {
         Order? order = await _orderRepository.GetOrderByIdAsync(id,userId);
-        // check for admin
-        if (order == null ||order.Status != "Pending")//|| order.CustomerId != userId )
+        if (order == null || order.Status != "Pending")
         {
             return false;
         }

@@ -17,12 +17,10 @@ public sealed class ShoppingCartService : IShoppingCartService
     {
         // should be one to one relationship so could be found with user id
         List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(userId,token);
-        // TODO check role
         if (cartItems == null || cartItems.Count < 1)
         {
             return null;
         }
-        // check why id is 0 when returned
         List<CartItemDto> cartItemsDtos = cartItems
             .Select(item => new CartItemDto
             {
@@ -64,7 +62,9 @@ public sealed class ShoppingCartService : IShoppingCartService
         // };
         // return await _shoppingCartRepository.AddItem(cartItem);
 
-
+        if (items.Quantity<1){
+            return false;
+        }
         CartItem cartItem = new CartItem
         {
             ProductId = items.ProductId,
@@ -72,7 +72,6 @@ public sealed class ShoppingCartService : IShoppingCartService
             CartId = items.Id,
         };
         return await _shoppingCartRepository.AddItemToCartAsync(userid,cartItem);
-        // throw new NotImplementedException();
     }
 
     public async Task<bool> UpdateItemsAsync(long userId, CartItemDto item)
