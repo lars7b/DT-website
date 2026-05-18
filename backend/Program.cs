@@ -9,6 +9,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddOpenApi();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 // iets gaat fout met de FluentValidation dus is tijdelijk weg gekoment
 // onderzoek naar:  https://docs.fluentvalidation.net/en/latest/aspnet.html?highlight=build
@@ -52,12 +53,11 @@ builder.Services.AddScoped<ICustomerRepository,CustomerRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-
+builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-
 builder.Services.AddScoped<IPaymentRepository,PaymentRepository>();
 builder.Services.AddScoped<IShoppingCartRepository, ShoppingCartRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
