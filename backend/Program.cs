@@ -45,11 +45,18 @@ builder.Services.AddCors(options =>
 
 // dependency injection
 // every user gets their own database connection, destroyed after use.
-builder.Services.AddScoped<ICustomerRepository,CustomerRepository>();
+// builder.Services.AddScoped<ICustomerRepository,CustomerRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<SubcategoryRepository>();
 builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<FavoriteRepository>();
+builder.Services.AddScoped<OrderHistoryRepository>();
+
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
@@ -57,9 +64,18 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentRepository,PaymentRepository>();
 builder.Services.AddScoped<IShoppingCartRepository, ShoppingCartRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+builder.Services.AddScoped<IOrderHistoryService, OrderHistoryService>();
 
 var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+app.UseHttpsRedirection();
 
 app.UseCors("AllowReactApp"); 
 app.UseAuthentication();
