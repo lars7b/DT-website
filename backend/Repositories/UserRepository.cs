@@ -86,7 +86,7 @@ public class UserRepository : IUserRepository
                 SELECT id, email, password_hash, role
                 FROM users
                 WHERE id = @userId;";
-            return await connection.QuerySingleOrDefaultAsync<User>(sqlUser, new { id = userId });
+            return await connection.QuerySingleOrDefaultAsync<User>(sqlUser, new { userId });
         }
         catch (Exception ex)
         {
@@ -104,14 +104,14 @@ public class UserRepository : IUserRepository
             var sqlPassword = @"
                 UPDATE users
                 SET password_hash = @newPasswordHash
-                WHERE id = @UserId;";
-            int rowsAffected = await connection.ExecuteAsync(sqlPassword, new { password_hash = newPasswordHash, id = userId });
-            
+                WHERE id = @userId;";
+            int rowsAffected = await connection.ExecuteAsync(sqlPassword, new { newPasswordHash, userId });
+
             return rowsAffected > 0;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fout bij updaten wachtwoord voor user {UserId}", userId);
+            _logger.LogError(ex, "Fout bij updaten wachtwoord voor user {userId}", userId);
             throw;
         }
     }
@@ -125,14 +125,14 @@ public class UserRepository : IUserRepository
             var sqlEmail = @"
                 UPDATE users
                 SET email = @newEmail
-                WHERE id = @UserId;";
-            int rowsAffected = await connection.ExecuteAsync(sqlEmail, new { email = newEmail, id = userId });
+                WHERE id = @userId;";
+            int rowsAffected = await connection.ExecuteAsync(sqlEmail, new { newEmail, userId });
 
             return rowsAffected > 0;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fout bij updaten email voor user {UserId}", userId);
+            _logger.LogError(ex, "Fout bij updaten email voor user {userId}", userId);
             throw;
         }
     }
