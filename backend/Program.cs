@@ -1,7 +1,5 @@
 using Backend.Repositories;
 using Backend.Services;
-using Backend.Validators;
-using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -11,9 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
-// iets gaat fout met de FluentValidation dus is tijdelijk weg gekoment
-// onderzoek naar:  https://docs.fluentvalidation.net/en/latest/aspnet.html?highlight=build
-// builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationAutoValidation();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
