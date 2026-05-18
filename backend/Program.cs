@@ -10,6 +10,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddOpenApi();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -51,6 +52,18 @@ builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<SubcategoryRepository>();
+builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<FavoriteRepository>();
+builder.Services.AddScoped<OrderHistoryRepository>();
+
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ISubcategoryService, SubcategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+builder.Services.AddScoped<IOrderHistoryService, OrderHistoryService>();
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
