@@ -15,6 +15,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState({ firstName: '', lastName: '', phone: '', address: '' });
   const [emailData, setEmailData] = useState({ newEmail: '', password: '' });
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
+  const [deletePassword, setDeletePassword] = useState('');
 
   // Status states
   const [isLoading, setIsLoading] = useState(true);
@@ -140,22 +141,33 @@ export default function ProfilePage() {
     }
   };
 
-  // Handler: Account Verwijderen (PUT /api/customer/me)
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault(); // Voorkom page reload als het in een form zit
+    
+    if (!deletePassword) {
+      setMessage({ type: 'error', text: 'Vul je huidige wachtwoord in om je account te verwijderen.' });
+      return;
+    }
+
     if (!window.confirm("Weet je zeker dat je je account wilt verwijderen? Dit kan niet ongedaan worden gemaakt.")) return;
 
     try {
       const response = await fetch(`${baseUrl}/customer/me`, {
-        method: 'PUT', // Volgens jouw C# controller is dit een PUT request
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: 'PUT', // Zorg dat dit overeenkomt met je backend (PUT of DELETE)
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        // Stuur het wachtwoord mee in de body (zorg dat je backend DTO dit verwacht)
+        body: JSON.stringify({ password: deletePassword }) 
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Fout bij verwijderen account.');
+        throw new Error(data.message || 'Fout bij verwijderen account. Controleer je wachtwoord.');
       }
       
-      logout(); // Account is weg, dus uitloggen
+      logout(); // Account is succesvol verwijderd, log de gebruiker uit
     } catch (error) {
       setMessage({ type: 'error', text: error.message });
     }
@@ -197,14 +209,7 @@ export default function ProfilePage() {
                   E-mail & Wachtwoord
                 </button>
               </li>
-              <li className="pt-4 mt-4 border-t border-gray-100">
-                <button 
-                  onClick={handleDeleteAccount}
-                  className="w-full text-left font-medium text-red-500 hover:text-red-700"
-                >
-                  Account Verwijderen
-                </button>
-              </li>
+
             </ul>
           </div>
         </aside>
@@ -260,6 +265,33 @@ export default function ProfilePage() {
                   {isSaving ? 'Opslaan...' : 'Wijzigingen Opslaan'}
                 </button>
               </form>
+              <hr className="my-10 border-gray-200" />
+              <div>
+                <h1 className="text-2xl font-bold mb-6 text-red-600">Account Verwijderen</h1>
+                <p className="text-sm text-gray-600 mb-4">
+                  Let op: Als je je account verwijdert, worden al je gegevens permanent gewist. Dit kan niet ongedaan worden gemaakt.
+                </p>
+                <form onSubmit={handleDeleteAccount} className="space-y-4 max-w-md bg-red-50 p-4 rounded border border-red-200">
+                  <div>
+                    <label className="block text-sm font-semibold mb-1 text-red-800">Bevestig met je wachtwoord</label>
+                    <input 
+                      type="password" 
+                      value={deletePassword} 
+                      onChange={e => setDeletePassword(e.target.value)}
+                      required
+                      placeholder="Huidig wachtwoord"
+                      className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-red-500" 
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={isSaving} 
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded transition"
+                  >
+                    Mijn Account Definitief Verwijderen
+                  </button>
+                </form>
+              </div>
             </section>
           )}
 
@@ -320,7 +352,6 @@ export default function ProfilePage() {
               </div>
             </section>
           )}
-
         </main>
       </div>
     </div>

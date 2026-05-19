@@ -57,10 +57,10 @@ public class CustomerController : ControllerBase
     [HttpPut("me")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteProfile()
+    public async Task<IActionResult> DeleteProfile([FromBody] string password)
     {
         int userId = GetUserIdFromToken();
-        var result = await _customerService.DeleteCustomerAsync(userId);
+        var result = await _customerService.DeleteCustomerAsync(userId, password);
 
         if (!result.Success)
         {

@@ -17,7 +17,7 @@ public class UserRepository : IUserRepository
         _logger = logger;
     }
 
-    public async Task<User?> CreateUserWithCustomerAsync(User user)
+    public async Task<User?> CreateUserWithCustomerAsync(User user, string firstName, string lastName)
     {
         await using var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync();
@@ -34,10 +34,10 @@ public class UserRepository : IUserRepository
             var userId = await connection.ExecuteScalarAsync<int>(sqlUser, user, transaction);
 
             var sqlCustomer = @"
-                INSERT INTO customers (user_id) 
-                VALUES (@UserId);";
+                INSERT INTO customers (user_id, first_name, last_name) 
+                VALUES (@UserId, @FirstName, @LastName);";
 
-            await connection.ExecuteAsync(sqlCustomer, new { UserId = userId }, transaction);
+            await connection.ExecuteAsync(sqlCustomer, new { UserId = userId, FirstName = firstName, LastName = lastName }, transaction);
 
             await transaction.CommitAsync();
 
