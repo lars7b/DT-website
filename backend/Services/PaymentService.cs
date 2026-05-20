@@ -79,7 +79,7 @@ public sealed class PaymentService : IPaymentService
         return false;
     }
 
-    public async Task<bool> DeletePaymentAsync(long id)
+    public async Task<bool> DeletePaymentAsync(long id, CancellationToken cancellationToken = default)
     {
         return await _repository.Delete(id);
     }
