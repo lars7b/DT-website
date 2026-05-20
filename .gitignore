@@ -23,6 +23,8 @@ yarn-error.log*
 # =========================
 # Backend (C# .NET)
 # =========================
+backend.Tests/bin/
+backend.Tests/obj/
 backend/bin/
 backend/obj/
 # Ignore local development settings (keep appsettings.json, but ignore the dev one)
