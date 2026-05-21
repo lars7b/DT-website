@@ -72,20 +72,44 @@ public class PaymentRepository : IPaymentRepository
                     SELECT 1
                     FROM users admin_user
                     WHERE admin_user.id = @userId
-                    AND admin_user.role = 'Admin');
+                    AND admin_user.role = 'Admin'));
             """,
             new { id, userId = userid }
         );
         return payment;
     }
 
-    public async Task<bool> Add(Payment payment)
+    public async Task<bool> Add(Payment payment,long? userid)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
-        string query =
-            "INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId, @Status);";
-        int result = await connection.ExecuteAsync(query, payment);
-        return result > 0;
+        if(userid == null)
+        {
+            string query =
+                "INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (@Amount, Current_timestamp(), @PaymentMethod, @OrderId, @Status);";
+            int result = await connection.ExecuteAsync(query, payment);
+            return result > 0;
+        }
+        else
+        {
+            string query =
+                """
+                INSERT INTO payments (amount, payment_date, payment_method, order_id, status) 
+                SELECT @Amount, Current_timestamp(), @PaymentMethod, @OrderId, @Status
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM orders o
+                    JOIN customers c ON o.customer_id = c.id
+                    WHERE o.id = @OrderId AND (
+                        c.user_id = @userId
+                        OR EXISTS (
+                            SELECT 1
+                            FROM users admin_user
+                            WHERE admin_user.id = @userId
+                            AND admin_user.role = 'Admin'));
+                """;
+            int result = await connection.ExecuteAsync(query, new { payment.Amount, payment.PaymentMethod, payment.OrderId, payment.Status, userId = userid });
+            return result > 0;
+        }
     }
 
     public async Task<bool> Update(Payment payment)

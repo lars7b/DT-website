@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Backend.Models;
 using Backend.Services;
+using Backend.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -54,7 +55,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreatePayment([FromBody] Payment payment) // of order
+    public async Task<ActionResult> CreatePayment([FromBody] CreatePaymentDto payment) // of order
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         string? userrole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -65,7 +66,7 @@ public sealed class PaymentController : ControllerBase
         bool result = await _paymentService.CreatePaymentAsync(long.Parse(userId),payment);
         if (result)
         {
-            return CreatedAtAction(nameof(GetPaymentById), new { id = payment.Id }, payment);
+            return NoContent();
         }
         return BadRequest();
     }
@@ -77,7 +78,7 @@ public sealed class PaymentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> UpdatePayment(
         long id,
-        [FromBody] Payment payment,
+        [FromBody] UpdatePaymentDto payment,
         CancellationToken cancellationToken
     )
     {

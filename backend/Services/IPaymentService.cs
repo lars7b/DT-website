@@ -1,4 +1,5 @@
 using Backend.Models;
+using Backend.DTOs;
 
 namespace Backend.Services;
 
@@ -6,14 +7,14 @@ public interface IPaymentService
 {
     Task<Payment?> GetPaymentByIdAsync(long id,long userid, CancellationToken token);
     Task<IEnumerable<Payment>> GetAllPaymentsAsync(long userid,CancellationToken token);
-    Task<bool> CreatePaymentAsync(long userid,Payment payment);
+    Task<bool> CreatePaymentAsync(long userid,CreatePaymentDto payment);
     /// <summary>
     /// updates payment, only admin can update payment
     /// </summary>
     /// <param name="payment">payment that needs to be updated woth the information that will get updated</param>
     /// <param name="token">optional token to give for selecting am payment that needs to be updated</param>
     /// <returns>if updating was succesful</returns>
-    Task<bool> UpdatePaymentAsync(Payment payment, CancellationToken token = default);
+    Task<bool> UpdatePaymentAsync(UpdatePaymentDto payment, CancellationToken token = default);
     /// <summary>
     /// deletes payment, only admin can delete payment
     /// </summary>

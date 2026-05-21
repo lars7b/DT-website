@@ -1,5 +1,6 @@
 using Backend.Models;
 using Backend.Repositories;
+using Backend.DTOs;
 using Isopoh.Cryptography.Argon2;
 
 // TODO https://www.techrepublic.com/article/online-payment-security/
@@ -34,25 +35,20 @@ public sealed class PaymentService : IPaymentService
         return await _repository.GetAll(userid, cancellationToken);
     }
 
-    public async Task<bool> CreatePaymentAsync(long userid, Payment payment)
+    public async Task<bool> CreatePaymentAsync(long userid, CreatePaymentDto paymentdto)
     {
         // TODO userid check
         // needs to check if order id exists and check price before create
-        bool result = await _repository.Add(payment);
-        return await Task.FromResult(result);
-    }
-
-    public async Task<bool> CreatePaymentAsync(long userid, long orderId, string method) //beter dto
-    {
         Payment payment = new Payment
         {
-            Amount = await _repository.GetAmountForOrder(orderId),
+            Amount = await _repository.GetAmountForOrder(paymentdto.OrderId),
             PaymentDate = DateTime.Now,
-            OrderId = orderId,
-            PaymentMethod = method,
-            Status = "Paid",
+            OrderId = paymentdto.OrderId,
+            PaymentMethod = paymentdto.PaymentMethod,
+            Status = paymentdto.Status,
         };
-        return await CreatePaymentAsync(userid, payment);
+        bool result = await _repository.Add(payment,userid);
+        return result;
     }
 
     /// <summary>
@@ -62,7 +58,7 @@ public sealed class PaymentService : IPaymentService
     /// /// <param name="cancellationToken">cancellation token for the get method</param>
     /// <returns></returns>
     public async Task<bool> UpdatePaymentAsync(
-        Payment payment,
+        UpdatePaymentDto payment,
         CancellationToken cancellationToken = default
     )
     {
