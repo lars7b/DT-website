@@ -14,4 +14,7 @@ public interface IProductService
 
     // Returns one product by id, or null when not found.
     Task<Product?> GetProductByIdAsync(int id, CancellationToken cancellationToken = default);
+
+    // Creates a new product and returns the stored record, or null when validation fails.
+    Task<Product?> CreateProductAsync(Product product, CancellationToken cancellationToken = default);
 }

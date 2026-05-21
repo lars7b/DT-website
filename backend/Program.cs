@@ -11,6 +11,8 @@ builder.Services.AddOpenApi();
 // Register repository and service in dependency injection per request.
 builder.Services.AddScoped<ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ReviewRepository>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 
 var app = builder.Build();
 

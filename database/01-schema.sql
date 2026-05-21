@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS "reviews" (
     "product_id" INT NOT NULL,
     "rating" INT,
     "comment" VARCHAR(100),
-    "review_date" DATE,
+	"review_date" DATE DEFAULT CURRENT_DATE,
     CONSTRAINT "fk_reviews_customer" 
         FOREIGN KEY ("customer_id") REFERENCES "customers" ("id"),
     CONSTRAINT "fk_reviews_product" 
