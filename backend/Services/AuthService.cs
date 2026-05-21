@@ -31,7 +31,7 @@ public class AuthService : IAuthService
             Role = "Customer"
         };
 
-        var createdCustomer = await _userRepository.CreateUserWithCustomerAsync(newUser);
+        var createdCustomer = await _userRepository.CreateUserWithCustomerAsync(newUser, request.FirstName, request.LastName);
         if (createdCustomer == null)
         {
             return (false, "Registration failed.");
