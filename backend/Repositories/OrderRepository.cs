@@ -217,7 +217,7 @@ public class OrderRepository : IOrderRepository
             resultitems += await _connection.ExecuteAsync(
                 """
                 INSERT INTO order_status_history (order_id, status, status_date)
-                VALUES (@orderId, @status, CURRENT_DATE);
+                VALUES (@orderId, @status, CURRENT_TIMESTAMP);
                 """,
                 new { orderId, status = "Pending" },
                 transaction
