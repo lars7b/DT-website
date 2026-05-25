@@ -3,19 +3,37 @@ namespace Backend.Services;
 using Backend.DTOs;
 using Backend.Models;
 using Backend.Repositories;
+using StackExchange.Redis;
+using System.Text.Json;
 
 public sealed class ShoppingCartService : IShoppingCartService
 {
     private readonly IShoppingCartRepository _shoppingCartRepository;
+    private readonly IDatabase _redis;
 
-    public ShoppingCartService(IShoppingCartRepository shoppingCartRepository)
+    public ShoppingCartService(IShoppingCartRepository shoppingCartRepository, IDatabase redis)
     {
         _shoppingCartRepository = shoppingCartRepository;
+        _redis = redis;
     }
 
+    /// <summary>
+    /// returns shopping cart for the given user id
+    /// should be one to one relationship so could be found with user id
+    /// redis uses user id as key and shopping cart as value
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     public async Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(long userId, CancellationToken token =default)
     {
-        // should be one to one relationship so could be found with user id
+        string cacheKey = $"shopping_cart:{userId}";
+        var cachedData = await _redis.StringGetAsync(cacheKey);
+
+        if (!cachedData.IsNullOrEmpty)
+        {
+            return JsonSerializer.Deserialize<ShoppingCartDto>(cachedData!);
+        }
         List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(userId,token);
         if (cartItems == null || cartItems.Count < 1)
         {
@@ -29,13 +47,17 @@ public sealed class ShoppingCartService : IShoppingCartService
                 Quantity = item.Quantity,
             })
             .ToList();
-
-        return new ShoppingCartDto
+        ShoppingCartDto shoppingcart = new ShoppingCartDto
         {
             Id = cartItems.First().CartId,
-            CustomerId = userId, ///
+            CustomerId = userId, /// TODO use custmerid not userid (possibly return whole shoppingcart with items via repo)
             Items = cartItemsDtos,
         };
+        await _redis.StringSetAsync(
+            cacheKey,
+            JsonSerializer.Serialize(shoppingcart),
+            TimeSpan.FromMinutes(15)); // how long it holds it 
+        return shoppingcart;
     }
  
     public async Task<bool> AddItemsAsync(long userid, CartItemDto items)
