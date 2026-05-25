@@ -62,28 +62,6 @@ public sealed class ShoppingCartService : IShoppingCartService
  
     public async Task<bool> AddItemsAsync(long userid, CartItemDto items)
     {
-        // ShoppingCart? cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
-        // if (cart == null || cart.Id == null)
-        // {
-        //     await _shoppingCartRepository.CreateCart(new ShoppingCart { CustomerId = userid });
-        //     cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid); // get card from create method
-        // }
-        // // // TODO check if product exists + check if quantity is valid + fix logic
-        // // for(int i=0;i<cart.Items.Count;i++)
-        // // {
-        // //     if(cart.Items[i].ProductId == items.ProductId){
-        // //         cart.Items[i].Quantity = items.Quantity; //could be +=
-        // //         return await _shoppingCartRepository.UpdateItems(cart.Items[i]);
-        // //     }
-        // // }
-        // CartItem cartItem = new CartItem
-        // {
-        //     ProductId = items.ProductId,
-        //     Quantity = items.Quantity,
-        //     CartId = cart!.Id,
-        // };
-        // return await _shoppingCartRepository.AddItem(cartItem);
-
         if (items.Quantity<1){
             return false;
         }
