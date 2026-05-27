@@ -11,14 +11,12 @@ public sealed class ShoppingCartService : IShoppingCartService
     private readonly IShoppingCartRepository _shoppingCartRepository;
     private readonly IDatabase _redis;
 
-    public ShoppingCartService(IShoppingCartRepository shoppingCartRepository, IConfiguration configuration)
+    public ShoppingCartService(
+        IShoppingCartRepository shoppingCartRepository,
+        IConnectionMultiplexer redis
+    )
     {
         _shoppingCartRepository = shoppingCartRepository;
-        string connectionString =
-            configuration.GetConnectionString("RedisDefaultConnection")
-            ?? throw new InvalidOperationException("Redis DB Connection missing");
-
-        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectionString);
         _redis = redis.GetDatabase();
     }
 
@@ -35,7 +33,7 @@ public sealed class ShoppingCartService : IShoppingCartService
         CancellationToken token = default
     )
     {
-        string cacheKey = $"shopping_cart:{userId}";
+        string cacheKey = $"shopping_cart:{userId}"; // change to customer id
         var cachedData = await _redis.StringGetAsync(cacheKey);
 
         if (!cachedData.IsNullOrEmpty)
@@ -92,12 +90,12 @@ public sealed class ShoppingCartService : IShoppingCartService
             Quantity = items.Quantity,
             CartId = items.Id,
         };
-        await _redis.StringSetAsync(
-            cacheKey,
-            JsonSerializer.Serialize(cartItem),
-            TimeSpan.FromMinutes(15)
-        ); // how long it holds it
-        return await _shoppingCartRepository.AddItemToCartAsync(userid, cartItem);
+        bool success = await _shoppingCartRepository.AddItemToCartAsync(userid, cartItem);
+        if (success)
+        {
+            await _redis.KeyDeleteAsync($"shopping_cart:{userid}");
+        }
+        return success;
     }
 
     public async Task<bool> UpdateItemsAsync(long userId, CartItemDto item)
@@ -113,7 +111,12 @@ public sealed class ShoppingCartService : IShoppingCartService
             Quantity = item.Quantity,
             CartId = cart.Id,
         };
-        return await _shoppingCartRepository.UpdateItems(cartItem);
+        bool success = await _shoppingCartRepository.UpdateItems(cartItem);
+        if (success)
+        {
+            await _redis.KeyDeleteAsync($"shopping_cart:{userId}");
+        }
+        return success;
     }
 
     public async Task<bool> UpdateCartAsync(ShoppingCartDto cart)
@@ -133,7 +136,12 @@ public sealed class ShoppingCartService : IShoppingCartService
                     CartId = cart.Id,
                 })
                 .ToList();
-            return await _shoppingCartRepository.UpdateItems(existingCart);
+            bool success = await _shoppingCartRepository.UpdateItems(existingCart);
+            if (success)
+            {
+                await _redis.KeyDeleteAsync($"shopping_cart:{existingCart.CustomerId}");
+            }
+            return success;
         }
         return false;
     }
@@ -143,13 +151,23 @@ public sealed class ShoppingCartService : IShoppingCartService
         ShoppingCart? cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
         if (cart != null)
         {
-            return await _shoppingCartRepository.DeleteCartAsync(cart); // can delete via userid (and shorten the process)
+            bool success = await _shoppingCartRepository.DeleteCartAsync(cart); // can delete via userid (and shorten the process)
+            if (success)
+            {
+                await _redis.KeyDeleteAsync($"shopping_cart:{userid}");
+            }
+            return success;
         }
         return false;
     }
 
     public async Task<bool> DeleteCartItemAsync(long cartItemId, long userId)
     {
-        return await _shoppingCartRepository.DeleteItemAsync(cartItemId, userId);
+        bool success = await _shoppingCartRepository.DeleteItemAsync(cartItemId, userId);
+        if (success)
+        {
+            await _redis.KeyDeleteAsync($"shopping_cart:{userId}");
+        }
+        return success;
     }
 }

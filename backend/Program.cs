@@ -47,10 +47,17 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
-    var configuration = builder.Configuration.GetConnectionString("Redis");
-    return ConnectionMultiplexer.Connect(configuration);
+    var configuration = builder.Configuration;
+    
+    string connectionString =
+        configuration.GetConnectionString("RedisDefaultConnection")
+        ?? throw new InvalidOperationException("Redis connection missing");
+
+    return ConnectionMultiplexer.Connect(
+        $"{connectionString}"
+    );
 });
 
 // dependency injection
