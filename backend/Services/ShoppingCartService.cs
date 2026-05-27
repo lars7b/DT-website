@@ -1,20 +1,25 @@
 namespace Backend.Services;
 
+using System.Text.Json;
 using Backend.DTOs;
 using Backend.Models;
 using Backend.Repositories;
 using StackExchange.Redis;
-using System.Text.Json;
 
 public sealed class ShoppingCartService : IShoppingCartService
 {
     private readonly IShoppingCartRepository _shoppingCartRepository;
     private readonly IDatabase _redis;
 
-    public ShoppingCartService(IShoppingCartRepository shoppingCartRepository, IDatabase redis)
+    public ShoppingCartService(IShoppingCartRepository shoppingCartRepository, IConfiguration configuration)
     {
         _shoppingCartRepository = shoppingCartRepository;
-        _redis = redis;
+        string connectionString =
+            configuration.GetConnectionString("RedisDefaultConnection")
+            ?? throw new InvalidOperationException("Redis DB Connection missing");
+
+        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(connectionString);
+        _redis = redis.GetDatabase();
     }
 
     /// <summary>
@@ -25,16 +30,29 @@ public sealed class ShoppingCartService : IShoppingCartService
     /// <param name="userId"></param>
     /// <param name="token"></param>
     /// <returns></returns>
-    public async Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(long userId, CancellationToken token =default)
+    public async Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(
+        long userId,
+        CancellationToken token = default
+    )
     {
         string cacheKey = $"shopping_cart:{userId}";
         var cachedData = await _redis.StringGetAsync(cacheKey);
 
         if (!cachedData.IsNullOrEmpty)
         {
-            return JsonSerializer.Deserialize<ShoppingCartDto>(cachedData!);
+            try
+            {
+                return JsonSerializer.Deserialize<ShoppingCartDto>(cachedData!);
+            }
+            catch
+            {
+                await _redis.KeyDeleteAsync(cacheKey);
+            }
         }
-        List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(userId,token);
+        List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(
+            userId,
+            token
+        );
         if (cartItems == null || cartItems.Count < 1)
         {
             return null;
@@ -50,19 +68,22 @@ public sealed class ShoppingCartService : IShoppingCartService
         ShoppingCartDto shoppingcart = new ShoppingCartDto
         {
             Id = cartItems.First().CartId,
-            CustomerId = userId, /// TODO use custmerid not userid (possibly return whole shoppingcart with items via repo)
+            CustomerId = userId,
+            /// TODO use custmerid not userid (possibly return whole shoppingcart with items via repo)
             Items = cartItemsDtos,
         };
         await _redis.StringSetAsync(
             cacheKey,
             JsonSerializer.Serialize(shoppingcart),
-            TimeSpan.FromMinutes(15)); // how long it holds it 
+            TimeSpan.FromMinutes(15)
+        ); // how long it holds it
         return shoppingcart;
     }
- 
+
     public async Task<bool> AddItemsAsync(long userid, CartItemDto items)
     {
-        if (items.Quantity<1){
+        if (items.Quantity < 1)
+        {
             return false;
         }
         CartItem cartItem = new CartItem
@@ -71,7 +92,12 @@ public sealed class ShoppingCartService : IShoppingCartService
             Quantity = items.Quantity,
             CartId = items.Id,
         };
-        return await _shoppingCartRepository.AddItemToCartAsync(userid,cartItem);
+        await _redis.StringSetAsync(
+            cacheKey,
+            JsonSerializer.Serialize(cartItem),
+            TimeSpan.FromMinutes(15)
+        ); // how long it holds it
+        return await _shoppingCartRepository.AddItemToCartAsync(userid, cartItem);
     }
 
     public async Task<bool> UpdateItemsAsync(long userId, CartItemDto item)
@@ -121,6 +147,7 @@ public sealed class ShoppingCartService : IShoppingCartService
         }
         return false;
     }
+
     public async Task<bool> DeleteCartItemAsync(long cartItemId, long userId)
     {
         return await _shoppingCartRepository.DeleteItemAsync(cartItemId, userId);

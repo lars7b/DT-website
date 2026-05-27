@@ -1,6 +1,26 @@
 @Backend_HostAddress = http://localhost:5066
 
-GET {{Backend_HostAddress}}/weatherforecast/
+### Login
+POST {{Backend_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@test1.test",
+  "password": "passwordfortestingt5T#"
+}
+
+###
+
+GET {{Backend_HostAddress}}/api/shoppingcart
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJ0ZXN0QHRlc3QxLnRlc3QiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJDdXN0b21lciIsImV4cCI6MTc3OTk5NDE1OSwiaXNzIjoiTXlCYWNrZW5kIiwiYXVkIjoiTXlGcm9udGVuZCJ9.pbRIrrVbbjRJGDUC8jmEccnxzy44iNydBRw0NCJMDFw
 Accept: application/json
 
 ###
+POST {{Backend_HostAddress}}/api/shoppingcart/items
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJ0ZXN0QHRlc3QxLnRlc3QiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJDdXN0b21lciIsImV4cCI6MTc3OTk5NDE1OSwiaXNzIjoiTXlCYWNrZW5kIiwiYXVkIjoiTXlGcm9udGVuZCJ9.pbRIrrVbbjRJGDUC8jmEccnxzy44iNydBRw0NCJMDFw
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "quantity": 2
+}
