@@ -1,16 +1,19 @@
 using Backend.Models;
 using Backend.DTOs;
 using Backend.Repositories;
+using Isopoh.Cryptography.Argon2;
 
 namespace Backend.Services;
 
 public class CustomerService : ICustomerService
 {
     private readonly ICustomerRepository _customerRepository;
+    private readonly IUserRepository _userRepository;
 
-    public CustomerService(ICustomerRepository customerRepository)
+    public CustomerService(ICustomerRepository customerRepository, IUserRepository userRepository)
     {
         _customerRepository = customerRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<CustomerDto?> GetCustomerAsync(int userId)
