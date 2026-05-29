@@ -24,7 +24,7 @@ public sealed class ShoppingCartController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ShoppingCartDto>> GetShoppingCart(CancellationToken token)
     {
-        // // should be one to one relationship so could be found with user id
+        // should be one to one relationship so could be found with user id
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId == null)
         {
