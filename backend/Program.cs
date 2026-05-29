@@ -7,6 +7,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,13 @@ builder
             IssuerSigningKey = new SymmetricSecurityKey(key),
         };
     });
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // CORS Policy
 builder.Services.AddCors(options =>
@@ -87,11 +95,15 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
+builder.Services.AddTransient<RateLimitingMiddleware>();
+
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseCors("AllowReactApp");
+app.UseMiddleware<RateLimitingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers(); // Maps api routes
