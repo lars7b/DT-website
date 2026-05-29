@@ -25,7 +25,7 @@ public sealed class ShoppingCartService : IShoppingCartService
     /// should be one to one relationship so could be found with user id
     /// redis uses user id as key and shopping cart as value
     /// </summary>
-    /// <param name="userId"></param>
+    /// <param name="userId">the user id of the customer that has that shopping cart</param>
     /// <param name="token"></param>
     /// <returns></returns>
     public async Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(
