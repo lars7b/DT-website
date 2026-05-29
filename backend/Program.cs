@@ -1,18 +1,36 @@
+using Microsoft.AspNetCore.HttpOverrides;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
+
+// test endpoint
+app.MapGet("/api/test-ip", (HttpContext context) =>
+{
+    return new 
+    {
+        RemoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+        ForwardedHeader = context.Request.Headers["X-Forwarded-For"].ToString() ?? "None"
+    };
+});
 
 var summaries = new[]
 {
