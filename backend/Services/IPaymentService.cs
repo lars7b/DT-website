@@ -19,5 +19,5 @@ public interface IPaymentService
     /// </summary>
     /// <param name="id">id of payment that will be deleted</param>
     /// <returns>if deleting was succesful</returns>
-    Task<bool> DeletePaymentAsync(long id);
+    Task<bool> DeletePaymentAsync(long id, CancellationToken cancellationToken);
 }
