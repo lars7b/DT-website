@@ -17,4 +17,4 @@ jobs:
         run: |
           cd /home/ubuntu-1104947/DT-website
           git pull origin main
-          docker-compose up -d --build
+          docker compose up -d --build || (docker-compose down && docker-compose up -d --build)
