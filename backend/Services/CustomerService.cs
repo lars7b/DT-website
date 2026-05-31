@@ -1,16 +1,19 @@
 using Backend.Models;
 using Backend.DTOs;
 using Backend.Repositories;
+using Isopoh.Cryptography.Argon2;
 
 namespace Backend.Services;
 
 public class CustomerService : ICustomerService
 {
     private readonly ICustomerRepository _customerRepository;
+    private readonly IUserRepository _userRepository;
 
-    public CustomerService(ICustomerRepository customerRepository)
+    public CustomerService(ICustomerRepository customerRepository, IUserRepository userRepository)
     {
         _customerRepository = customerRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<CustomerDto?> GetCustomerAsync(int userId)
@@ -21,6 +24,8 @@ public class CustomerService : ICustomerService
 
         return new CustomerDto
         {
+            Id = customer.Id,
+            UserId = customer.UserId,
             FirstName = customer.FirstName,
             LastName = customer.LastName,
             Phone = customer.Phone,
@@ -40,7 +45,7 @@ public class CustomerService : ICustomerService
     public async Task<(bool Success, string Message)> DeleteCustomerAsync(int userId, string password)
     {
         User? user = await _userRepository.GetUserByIdAsync(userId);
-        if(user == null) return (false, "Update failed.");
+        if (user == null) return (false, "Update failed.");
         bool isValid = Argon2.Verify(user.PasswordHash, password);
         if (!isValid) return (false, "Update failed.");
 

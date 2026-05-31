@@ -17,6 +17,11 @@ export default function ProfilePage() {
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
   const [deletePassword, setDeletePassword] = useState('');
 
+  const [customerId, setCustomerId] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
+
   // Status states
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,6 +50,7 @@ export default function ProfilePage() {
             phone: data.phone || '',
             address: data.address || ''
           });
+          setCustomerId(data.id ?? null);
         } else {
           throw new Error('Kon profiel niet ophalen.');
         }
@@ -57,6 +63,43 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [token, baseUrl, navigate]);
+
+  useEffect(() => {
+    if (!token || !customerId) return;
+
+    const controller = new AbortController();
+
+    const fetchOrders = async () => {
+      try {
+        setOrdersLoading(true);
+        setOrdersError('');
+
+        const response = await fetch(`${baseUrl}/customers/${customerId}/orders`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          throw new Error('Kon bestelgeschiedenis niet ophalen.');
+        }
+
+        const data = await response.json();
+        setOrders(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          setOrdersError(error.message);
+        }
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchOrders();
+    return () => controller.abort();
+  }, [token, customerId, baseUrl]);
+
+  const formatCurrency = (value) =>
+    Number(value || 0).toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // Handler: Update Persoonsgegevens (PATCH /api/customer/me)
   const handleUpdateProfile = async (e) => {
@@ -209,6 +252,14 @@ export default function ProfilePage() {
                   E-mail & Wachtwoord
                 </button>
               </li>
+              <li>
+                <button 
+                  onClick={() => { setActiveTab('bestellingen'); setMessage({type:'', text:''}); }}
+                  className={`w-full text-left font-medium ${activeTab === 'bestellingen' ? 'text-blue-600' : 'text-gray-600 hover:text-black'}`}
+                >
+                  Bestelgeschiedenis
+                </button>
+              </li>
 
             </ul>
           </div>
@@ -350,6 +401,66 @@ export default function ProfilePage() {
                   </button>
                 </form>
               </div>
+            </section>
+          )}
+
+          {activeTab === 'bestellingen' && (
+            <section>
+              <h1 className="text-2xl font-bold mb-6">Bestelgeschiedenis</h1>
+
+              {ordersLoading ? (
+                <div className="text-center py-10 text-gray-500">Bestellingen laden...</div>
+              ) : ordersError ? (
+                <div className="text-center py-10 text-red-500">{ordersError}</div>
+              ) : orders.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">Nog geen bestellingen gevonden.</div>
+              ) : (
+                <div className="space-y-6">
+                  {orders.map((order) => {
+                    const itemsTotal = order.items.reduce(
+                      (sum, item) => sum + item.quantity * Number(item.unitPrice || 0),
+                      0
+                    );
+
+                    return (
+                      <div key={order.orderId} className="border border-gray-200 rounded p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h2 className="text-lg font-bold">Bestelling #{order.orderId}</h2>
+                            <p className="text-sm text-gray-500">
+                              {new Date(order.orderDate).toLocaleDateString('nl-NL')}
+                            </p>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-600">
+                            {order.status || 'Onbekend'}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          {order.items.length === 0 ? (
+                            <p className="text-sm text-gray-500">Geen items gevonden.</p>
+                          ) : (
+                            order.items.map((item) => (
+                              <div key={item.orderItemId} className="flex items-center justify-between text-sm">
+                                <div>
+                                  <p className="font-semibold">{item.productName}</p>
+                                  <p className="text-gray-500">Aantal: {item.quantity}</p>
+                                </div>
+                                <p className="font-semibold">€ {formatCurrency(item.unitPrice)}</p>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                          <span className="text-sm text-gray-500">Totaal</span>
+                          <span className="font-bold">€ {formatCurrency(itemsTotal)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           )}
         </main>

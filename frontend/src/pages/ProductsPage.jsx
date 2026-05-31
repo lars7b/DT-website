@@ -1,14 +1,21 @@
 // ProductsPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProductsPage() {
+  const { token, isLoggedIn } = useAuth();
+  const baseUrl = import.meta.env.VITE_API_URL;
+
   // State variabelen voor het opslaan van producten, categorieën en laad-statussen
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [customerId, setCustomerId] = useState(null);
+  const [favoriteIds, setFavoriteIds] = useState(() => new Set());
 
   // State voor filters en sortering (klaar om mee te sturen in een API request)
   const [sortOrder, setSortOrder] = useState('price_asc');
@@ -40,6 +47,54 @@ export default function ProductsPage() {
 
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (!token) {
+      setCustomerId(null);
+      setFavoriteIds(new Set());
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchCustomerAndFavorites = async () => {
+      try {
+        const profileResponse = await fetch(`${baseUrl}/customer/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+
+        if (!profileResponse.ok) {
+          throw new Error('Kon profiel niet ophalen.');
+        }
+
+        const profile = await profileResponse.json();
+        if (!profile?.id) {
+          throw new Error('Klant id ontbreekt in profiel.');
+        }
+
+        setCustomerId(profile.id);
+
+        const favoritesResponse = await fetch(
+          `${baseUrl}/customers/${profile.id}/favorites`,
+          { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
+        );
+
+        if (favoritesResponse.ok) {
+          const favorites = await favoritesResponse.json();
+          const ids = new Set((favorites || []).map((fav) => fav.productId));
+          setFavoriteIds(ids);
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Fout bij ophalen favorieten', err);
+        }
+      }
+    };
+
+    fetchCustomerAndFavorites();
+    return () => controller.abort();
+  }, [token, baseUrl]);
 
   useEffect(() => {
     // Backend request moet hier komen voor de producten.
@@ -74,13 +129,41 @@ export default function ProductsPage() {
     fetchProducts();
   }, [sortOrder, selectedCategories]); // Request wordt opnieuw uitgevoerd als sortering of filters veranderen
 
-  const handleToggleFavorite = (e, productId) => {
+  const handleToggleFavorite = async (e, productId) => {
     e.preventDefault(); // Voorkomt dat de Link naar de detailpagina wordt geactiveerd
-    // Backend request moet hier komen.
-    // Voorbeeld endpoint: POST /api/favorites
-    // Verwachte payload: { customer_id: (uit user sessie), product_id: productId }
-    console.log(`Product ${productId} toegevoegd aan favorieten`);
+    if (!isLoggedIn || !token || !customerId) {
+      console.warn('Je moet ingelogd zijn om favorieten op te slaan.');
+      return;
+    }
+
+    const isFavorite = favoriteIds.has(productId);
+    const endpoint = `${baseUrl}/customers/${customerId}/favorites/${productId}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: isFavorite ? 'DELETE' : 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok && response.status !== 409) {
+        throw new Error('Favoriet bijwerken mislukt.');
+      }
+
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (isFavorite) {
+          next.delete(productId);
+        } else {
+          next.add(productId);
+        }
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  const favoriteIdsMemo = useMemo(() => favoriteIds, [favoriteIds]);
 
   const handleCategoryFilterChange = (categoryId) => {
     setSelectedCategories(prev => 
@@ -183,7 +266,7 @@ export default function ProductsPage() {
                       className="favorite-toggle-btn absolute top-2 right-2 text-gray-400 hover:text-red-500 z-10"
                       title="Toevoegen aan favorieten"
                     >
-                      ♡
+                      {favoriteIdsMemo.has(product.id) ? '♥' : '♡'}
                     </button>
                     <span className="image-placeholder text-gray-400">[Afbeelding]</span>
                   </div>

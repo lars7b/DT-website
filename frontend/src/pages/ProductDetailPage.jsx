@@ -2,8 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProductDetailPage() {
+  const { token, isLoggedIn } = useAuth();
+  const baseUrl = import.meta.env.VITE_API_URL;
+
   // useParams haalt het product ID uit de URL, bijv. /product/1
   // Zorg ervoor dat de route in App.jsx is ingesteld als: <Route path="/product/:id" element={<ProductDetailPage />} />
   const { id } = useParams(); 
@@ -12,6 +16,9 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [customerId, setCustomerId] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     // Backend request voor het ophalen van specifieke product details.
@@ -49,6 +56,54 @@ export default function ProductDetailPage() {
     fetchProductDetails();
   }, [id]);
 
+  useEffect(() => {
+    if (!token) {
+      setCustomerId(null);
+      setIsFavorite(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchCustomerAndFavorites = async () => {
+      try {
+        const profileResponse = await fetch(`${baseUrl}/customer/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+
+        if (!profileResponse.ok) {
+          throw new Error('Kon profiel niet ophalen.');
+        }
+
+        const profile = await profileResponse.json();
+        if (!profile?.id) {
+          throw new Error('Klant id ontbreekt in profiel.');
+        }
+
+        setCustomerId(profile.id);
+
+        const favoritesResponse = await fetch(
+          `${baseUrl}/customers/${profile.id}/favorites`,
+          { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
+        );
+
+        if (favoritesResponse.ok) {
+          const favorites = await favoritesResponse.json();
+          const favoriteSet = new Set((favorites || []).map((fav) => fav.productId));
+          setIsFavorite(favoriteSet.has(Number(id)));
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Fout bij ophalen favorieten', err);
+        }
+      }
+    };
+
+    fetchCustomerAndFavorites();
+    return () => controller.abort();
+  }, [token, baseUrl, id]);
+
   // Handler voor het toevoegen aan de winkelwagen
   const handleAddToCart = () => {
     // Backend request moet hier komen.
@@ -59,12 +114,27 @@ export default function ProductDetailPage() {
   };
 
   // Handler voor het toevoegen aan favorieten
-  const handleToggleFavorite = () => {
-    // Backend request moet hier komen.
-    // Voorbeeld endpoint: POST /api/favorites
-    // Verwachte payload: { customer_id: (uit user sessie), product_id: product.id }
-    // De backend voegt dit toe aan de 'favorites' tabel.
-    console.log(`Product ${product.id} toegevoegd aan favorieten`);
+  const handleToggleFavorite = async () => {
+    if (!isLoggedIn || !token || !customerId) {
+      console.warn('Je moet ingelogd zijn om favorieten op te slaan.');
+      return;
+    }
+
+    const endpoint = `${baseUrl}/customers/${customerId}/favorites/${product.id}`;
+    try {
+      const response = await fetch(endpoint, {
+        method: isFavorite ? 'DELETE' : 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok && response.status !== 409) {
+        throw new Error('Favoriet bijwerken mislukt.');
+      }
+
+      setIsFavorite((prev) => !prev);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // UI weergave tijdens het laden
@@ -141,7 +211,7 @@ export default function ProductDetailPage() {
               className="favorite-button p-3 border border-gray-300 rounded hover:bg-gray-50 text-gray-500 transition"
               title="Toevoegen aan favorieten"
             >
-              ♡
+              {isFavorite ? '♥' : '♡'}
             </button>
           </div>
         </div>
