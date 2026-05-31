@@ -3,27 +3,27 @@ name: Deploy to VM
 on:
   push:
     branches:
-      - main 
+      - main
 
 jobs:
   deploy:
     runs-on: self-hosted
-    
+
     steps:
       - name: Deploy Stack
         env:
           DB_PASS: ${{ secrets.DB_PASSWORD }}
           JWT_KEY: ${{ secrets.JWT_SECRET_KEY }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-        
+
         run: |
           cd /home/ubuntu-1104947/DT-website
-          
+
           git fetch origin main
           git reset --hard origin/main
 
           echo "DB_PASSWORD=${DB_PASS}" > .env
           echo "JWT_SECRET_KEY=${JWT_KEY}" >> .env
           echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >> .env
-          
-          docker-compose up -d --build
+
+          docker compose up -d --build || (docker-compose down && docker-compose up -d --build)

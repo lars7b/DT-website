@@ -1,4 +1,5 @@
 using System.Text;
+using Backend.Middleware;
 using Backend.Repositories;
 using Backend.Services;
 using Backend.Validators;
@@ -95,7 +96,7 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
-builder.Services.AddTransient<RateLimitingMiddleware>();
+builder.Services.AddTransient<RateLimitMiddleware>();
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
@@ -103,7 +104,7 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 app.UseCors("AllowReactApp");
-app.UseMiddleware<RateLimitingMiddleware>();
+app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers(); // Maps api routes

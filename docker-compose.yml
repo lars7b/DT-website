@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # --- THE DATABASE ---
@@ -15,7 +15,7 @@ services:
       - ./database:/docker-entrypoint-initdb.d
       - pgdata:/var/lib/postgresql
 
-   # --- CACHE ---
+    # --- CACHE ---
   redis:
     image: redis
     restart: always
@@ -25,7 +25,7 @@ services:
 
   # --- BACKEND ---
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
