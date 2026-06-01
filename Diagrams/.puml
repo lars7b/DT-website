@@ -1,0 +1,18 @@
+@startuml C4_Elements
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+AddProperty("Names", "Adam")
+AddProperty("Phone", "11111")
+AddProperty("Address", "Funstreet 1")
+Person(customer, "Customer", "customer desc")
+AddProperty("Names", "Bella")
+AddProperty("Phone", "1112222")
+AddProperty("Position", "Administrator")
+Person(employee, "Employee", "Optional Description")
+Container(Login, "Login", "Technology", "Optional Description")
+System(systemAlias, "Label", "Optional Description")
+
+Rel(customer, Login, "api/auth/login", "request to log in {loginDto}")
+Rel(employee, Login, "api/auth/login", "request to log in {loginDto}")
+
+@enduml
