@@ -1,6 +1,85 @@
-@Backend_HostAddress = http://localhost:5066
+@baseUrl = http://localhost:5066
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJ0ZXN0QHRlc3QxLnRlc3QiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJDdXN0b21lciIsImV4cCI6MTc4MDAwMjQ1NSwiaXNzIjoiTXlCYWNrZW5kIiwiYXVkIjoiTXlGcm9udGVuZCJ9.tBCkpRYkcwCvQS9B44Kd2f_WGlDj-Iriz3d43KV8bHI
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
 
-GET {{Backend_HostAddress}}/weatherforecast/
+{
+  "email": "test@test1.test",
+  "password": "passwordfortestingt5T#"
+}
+
+##################################################
+### GET SHOPPING CART
+##################################################
+
+GET {{baseUrl}}/api/shoppingcart
+Authorization: Bearer {{token}}
 Accept: application/json
 
-###
+##################################################
+### ADD ITEM TO CART
+##################################################
+
+POST {{baseUrl}}/api/shoppingcart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": 1,
+  "productId": 100,
+  "quantity": 2
+}
+
+##################################################
+### UPDATE CART ITEM
+##################################################
+
+PUT {{baseUrl}}/api/shoppingcart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": 1,
+  "productId": 100,
+  "quantity": 5
+}
+
+##################################################
+### UPDATE WHOLE CART
+##################################################
+
+PUT {{baseUrl}}/api/shoppingcart
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": 1,
+  "customerId": 1,
+  "items": [
+    {
+      "id": 1,
+      "productId": 100,
+      "quantity": 2
+    },
+    {
+      "id": 2,
+      "productId": 200,
+      "quantity": 1
+    }
+  ]
+}
+
+##################################################
+### DELETE CART ITEM
+##################################################
+
+DELETE {{baseUrl}}/api/shoppingcart/items/1
+Authorization: Bearer {{token}}
+
+##################################################
+### DELETE WHOLE CART
+##################################################
+
+DELETE {{baseUrl}}/api/shoppingcart
+Authorization: Bearer {{token}}
