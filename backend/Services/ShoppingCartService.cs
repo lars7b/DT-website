@@ -1,10 +1,5 @@
 namespace Backend.Services;
 
-using System.Text.Json;
-using Backend.DTOs;
-using Backend.Models;
-using Backend.Repositories;
-using StackExchange.Redis;
 using Backend.DTOs;
 using Backend.Models;
 using Backend.Repositories;
@@ -12,48 +7,16 @@ using Backend.Repositories;
 public sealed class ShoppingCartService : IShoppingCartService
 {
     private readonly IShoppingCartRepository _shoppingCartRepository;
-    private readonly IDatabase _redis;
 
-    public ShoppingCartService(
-        IShoppingCartRepository shoppingCartRepository,
-        IConnectionMultiplexer redis
-    )
+    public ShoppingCartService(IShoppingCartRepository shoppingCartRepository)
     {
         _shoppingCartRepository = shoppingCartRepository;
-        _redis = redis.GetDatabase();
     }
 
-    /// <summary>
-    /// returns shopping cart for the given user id
-    /// should be one to one relationship so could be found with user id
-    /// redis uses user id as key and shopping cart as value
-    /// </summary>
-    /// <param name="userId">the user id of the customer that has that shopping cart</param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    public async Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(
-        long userId,
-        CancellationToken token = default
-    )
+    public async Task<ShoppingCartDto?> GetShoppingCartByUserIdAsync(long userId, CancellationToken token =default)
     {
-        string cacheKey = $"shopping_cart:{userId}"; // change to customer id
-        var cachedData = await _redis.StringGetAsync(cacheKey);
-
-        if (!cachedData.IsNullOrEmpty)
-        {
-            try
-            {
-                return JsonSerializer.Deserialize<ShoppingCartDto>(cachedData!);
-            }
-            catch
-            {
-                await _redis.KeyDeleteAsync(cacheKey);
-            }
-        }
-        List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(
-            userId,
-            token
-        );
+        // should be one to one relationship so could be found with user id
+        List<CartItem> cartItems = await _shoppingCartRepository.GetAllItemsFromCartByCustomerId(userId,token);
         if (cartItems == null || cartItems.Count < 1)
         {
             return null;
@@ -66,25 +29,40 @@ public sealed class ShoppingCartService : IShoppingCartService
                 Quantity = item.Quantity,
             })
             .ToList();
-        ShoppingCartDto shoppingcart = new ShoppingCartDto
+
+        return new ShoppingCartDto
         {
             Id = cartItems.First().CartId,
-            CustomerId = userId,
-            /// TODO use custmerid not userid (possibly return whole shoppingcart with items via repo)
+            CustomerId = userId, ///
             Items = cartItemsDtos,
         };
-        await _redis.StringSetAsync(
-            cacheKey,
-            JsonSerializer.Serialize(shoppingcart),
-            TimeSpan.FromMinutes(15)
-        ); // how long it holds it
-        return shoppingcart;
     }
-
+ 
     public async Task<bool> AddItemsAsync(long userid, CartItemDto items)
     {
-        if (items.Quantity < 1)
-        {
+        // ShoppingCart? cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
+        // if (cart == null || cart.Id == null)
+        // {
+        //     await _shoppingCartRepository.CreateCart(new ShoppingCart { CustomerId = userid });
+        //     cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid); // get card from create method
+        // }
+        // // // TODO check if product exists + check if quantity is valid + fix logic
+        // // for(int i=0;i<cart.Items.Count;i++)
+        // // {
+        // //     if(cart.Items[i].ProductId == items.ProductId){
+        // //         cart.Items[i].Quantity = items.Quantity; //could be +=
+        // //         return await _shoppingCartRepository.UpdateItems(cart.Items[i]);
+        // //     }
+        // // }
+        // CartItem cartItem = new CartItem
+        // {
+        //     ProductId = items.ProductId,
+        //     Quantity = items.Quantity,
+        //     CartId = cart!.Id,
+        // };
+        // return await _shoppingCartRepository.AddItem(cartItem);
+
+        if (items.Quantity<1){
             return false;
         }
         CartItem cartItem = new CartItem
@@ -93,12 +71,7 @@ public sealed class ShoppingCartService : IShoppingCartService
             Quantity = items.Quantity,
             CartId = items.Id,
         };
-        bool success = await _shoppingCartRepository.AddItemToCartAsync(userid, cartItem);
-        if (success)
-        {
-            await _redis.KeyDeleteAsync($"shopping_cart:{userid}");
-        }
-        return success;
+        return await _shoppingCartRepository.AddItemToCartAsync(userid,cartItem);
     }
 
     public async Task<bool> UpdateItemsAsync(long userId, CartItemDto item)
@@ -114,12 +87,7 @@ public sealed class ShoppingCartService : IShoppingCartService
             Quantity = item.Quantity,
             CartId = cart.Id,
         };
-        bool success = await _shoppingCartRepository.UpdateItems(cartItem);
-        if (success)
-        {
-            await _redis.KeyDeleteAsync($"shopping_cart:{userId}");
-        }
-        return success;
+        return await _shoppingCartRepository.UpdateItems(cartItem);
     }
 
     public async Task<bool> UpdateCartAsync(ShoppingCartDto cart)
@@ -139,12 +107,7 @@ public sealed class ShoppingCartService : IShoppingCartService
                     CartId = cart.Id,
                 })
                 .ToList();
-            bool success = await _shoppingCartRepository.UpdateItems(existingCart);
-            if (success)
-            {
-                await _redis.KeyDeleteAsync($"shopping_cart:{existingCart.CustomerId}");
-            }
-            return success;
+            return await _shoppingCartRepository.UpdateItems(existingCart);
         }
         return false;
     }
@@ -154,23 +117,12 @@ public sealed class ShoppingCartService : IShoppingCartService
         ShoppingCart? cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
         if (cart != null)
         {
-            bool success = await _shoppingCartRepository.DeleteCartAsync(cart); // can delete via userid (and shorten the process)
-            if (success)
-            {
-                await _redis.KeyDeleteAsync($"shopping_cart:{userid}");
-            }
-            return success;
+            return await _shoppingCartRepository.DeleteCartAsync(cart); // can delete via userid (and shorten the process)
         }
         return false;
     }
-
     public async Task<bool> DeleteCartItemAsync(long cartItemId, long userId)
     {
-        bool success = await _shoppingCartRepository.DeleteItemAsync(cartItemId, userId);
-        if (success)
-        {
-            await _redis.KeyDeleteAsync($"shopping_cart:{userId}");
-        }
-        return success;
+        return await _shoppingCartRepository.DeleteItemAsync(cartItemId, userId);
     }
 }

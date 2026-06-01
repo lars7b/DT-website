@@ -44,7 +44,7 @@ public class CustomerService : ICustomerService
     {
         User? user = await _userRepository.GetUserByIdAsync(userId);
         if(user == null) return (false, "Update failed.");
-        bool isValid = true;//Argon2.Verify(user.PasswordHash, password);
+        bool isValid = Argon2.Verify(user.PasswordHash, password);
         if (!isValid) return (false, "Update failed.");
 
         var deleteStatus = await _customerRepository.DeleteCustomerAsync(userId);

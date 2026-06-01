@@ -30,7 +30,7 @@ public sealed class ShoppingCartController : ControllerBase
         {
             return Unauthorized();
         }
-        ShoppingCartDto? cart = await _shoppingCartService.GetShoppingCartByUserIdAsync(long.Parse(userId),token);
+        var cart = await _shoppingCartService.GetShoppingCartByUserIdAsync(long.Parse(userId),token);
         if (cart == null)
         {
             return NotFound();
@@ -39,7 +39,7 @@ public sealed class ShoppingCartController : ControllerBase
     }
 
     [HttpPost("items")]
-    public async Task<ActionResult> AddItemToShoppingCart([FromBody] CartItemDto item) //could do with id of product
+    public async Task<ActionResult> AddItemToShoppingCart([FromBody] CartItemDto item)
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId == null)

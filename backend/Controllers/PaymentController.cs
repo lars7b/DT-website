@@ -95,9 +95,9 @@ public sealed class PaymentController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id:long}")]
-    public async Task<ActionResult> DeletePayment(long id)
+    public async Task<ActionResult> DeletePayment(long id, CancellationToken cancellationToken)
     {
-        bool succesful = await _paymentService.DeletePaymentAsync(id);
+        bool succesful = await _paymentService.DeletePaymentAsync(id, cancellationToken);
         if (succesful == false)
         {
             return BadRequest("Deleting was unsuccesful");
