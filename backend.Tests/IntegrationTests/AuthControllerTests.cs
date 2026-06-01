@@ -21,6 +21,8 @@ public class AuthControllerTests : IClassFixture<CustomApiFactory>
         // ARRANGE
         var request = new RegisterDto 
         { 
+            FirstName = "Test",
+            LastName = "User",
             Email = "nieuw@ikea.nl", 
             Password = "VeiligWachtwoord123!" 
         };
