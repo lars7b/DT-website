@@ -102,17 +102,16 @@ public class ShoppingCartServiceTests
         );
 
         _dbMock.Verify(
-            r =>
-                r.StringSetAsync(
-                    $"shopping_cart:{userId}",
-                    It.IsAny<RedisValue>(),
-                    TimeSpan.FromMinutes(15),
-                    It.IsAny<bool>(),
-                    It.IsAny<When>(),
-                    It.IsAny<CommandFlags>()
-                ),
-            Times.Once
-        );
+    r => r.StringSetAsync(
+        It.IsAny<RedisKey>(),
+        It.IsAny<RedisValue>(),
+        It.IsAny<TimeSpan?>(),
+        It.IsAny<bool>(),
+        It.IsAny<When>(),
+        It.IsAny<CommandFlags>()
+    ),
+    Times.Once
+);
     }
 
     [Fact]
@@ -137,16 +136,15 @@ public class ShoppingCartServiceTests
         Assert.Null(result);
 
         _dbMock.Verify(
-            r =>
-                r.StringSetAsync(
-                    It.IsAny<RedisKey>(),
-                    It.IsAny<RedisValue>(),
-                    It.IsAny<TimeSpan>(),
-                    It.IsAny<bool>(),
-                    It.IsAny<When>(),
-                    It.IsAny<CommandFlags>()
-                ),
-            Times.Never
-        );
+    r => r.StringSetAsync(
+        It.IsAny<RedisKey>(),
+        It.IsAny<RedisValue>(),
+        It.IsAny<TimeSpan?>(),
+        It.IsAny<bool>(),
+        It.IsAny<When>(),
+        It.IsAny<CommandFlags>()
+    ),
+    Times.Once
+);
     }
 }

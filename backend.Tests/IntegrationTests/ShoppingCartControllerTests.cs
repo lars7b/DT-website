@@ -7,21 +7,26 @@ namespace Backend.Tests.IntegrationTests;
 
 public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
 {
-    private readonly HttpClient _client;
+    private readonly HttpClient _authenticatedClient;
+    private readonly HttpClient _unauthenticatedClient;
 
-    public ShoppingCartControllerTests(CustomApiFactory factory)
+    public ShoppingCartControllerTests()
     {
-        _client = factory.CreateClient();
+        _authenticatedClient =
+            new AuthenticatedApiFactory().CreateClient();
+
+        _unauthenticatedClient =
+            new UnauthenticatedApiFactory().CreateClient();
     }
 
     [Fact]
     public async Task GetShoppingCart_ShouldReturn401Unauthorized_WhenNotAuthenticated()
     {
         // ARRANGE
-        // No authorization header
+        // No setup needed for unauthenticated client
 
         // ACT
-        var response = await _client.GetAsync("/api/shoppingcart");
+        var response = await _unauthenticatedClient.GetAsync("/api/shoppingcart");
 
         // ASSERT
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -31,11 +36,10 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     public async Task GetShoppingCart_ShouldReturn200Ok_WhenUserHasCart()
     {
         // ARRANGE
-        // Assuming authenticated request with valid user
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
+        // No setup needed for authenticated client
 
         // ACT
-        var response = await _client.GetAsync("/api/shoppingcart");
+        var response = await _authenticatedClient.GetAsync("/api/shoppingcart");
 
         // ASSERT
         // Note: This will likely fail without proper auth setup
@@ -47,11 +51,8 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     [Fact]
     public async Task GetShoppingCart_ShouldReturn404NotFound_WhenCartDoesNotExist()
     {
-        // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
-
         // ACT
-        var response = await _client.GetAsync("/api/shoppingcart");
+        var response = await _unauthenticatedClient.GetAsync("/api/shoppingcart");
 
         // ASSERT
         // Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -68,7 +69,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _client.PostAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _unauthenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -78,7 +79,6 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     public async Task AddItemToShoppingCart_ShouldReturn400BadRequest_WhenQuantityIsZero()
     {
         // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
         var item = new CartItemDto
         {
             ProductId = 1,
@@ -86,7 +86,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _client.PostAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -96,7 +96,6 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     public async Task AddItemToShoppingCart_ShouldReturn400BadRequest_WhenQuantityIsNegative()
     {
         // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
         var item = new CartItemDto
         {
             ProductId = 1,
@@ -104,7 +103,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _client.PostAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -113,11 +112,8 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     [Fact]
     public async Task AddItemToShoppingCart_ShouldReturn400BadRequest_WhenItemIsNull()
     {
-        // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
-
         // ACT
-        var response = await _client.PostAsJsonAsync("/api/shoppingcart/items", (CartItemDto)null);
+        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", (CartItemDto)null);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -127,7 +123,6 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     public async Task AddItemToShoppingCart_ShouldReturn204NoContent_WhenItemAddedSuccessfully()
     {
         // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
         var item = new CartItemDto
         {
             ProductId = 1,
@@ -135,7 +130,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _client.PostAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         // Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -153,7 +148,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _client.PutAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _unauthenticatedClient.PutAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -163,7 +158,6 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     public async Task UpdateItemToShoppingCart_ShouldReturn400BadRequest_WhenQuantityIsZero()
     {
         // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
         var item = new CartItemDto
         {
             Id = 1,
@@ -172,7 +166,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _client.PutAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _authenticatedClient.PutAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -182,7 +176,6 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     public async Task UpdateItemToShoppingCart_ShouldReturn204NoContent_WhenItemUpdatedSuccessfully()
     {
         // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
         var item = new CartItemDto
         {
             Id = 1,
@@ -191,7 +184,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _client.PutAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _authenticatedClient.PutAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         // Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -200,11 +193,8 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     [Fact]
     public async Task DeleteShoppingCart_ShouldReturn401Unauthorized_WhenNotAuthenticated()
     {
-        // ARRANGE
-        // No authorization header
-
         // ACT
-        var response = await _client.DeleteAsync("/api/shoppingcart");
+        var response = await _unauthenticatedClient.DeleteAsync("/api/shoppingcart");
 
         // ASSERT
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -213,11 +203,8 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     [Fact]
     public async Task DeleteShoppingCart_ShouldReturn204NoContent_WhenCartDeletedSuccessfully()
     {
-        // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
-
         // ACT
-        var response = await _client.DeleteAsync("/api/shoppingcart");
+        var response = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
 
         // ASSERT
         // Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -230,7 +217,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         long cartItemId = 1;
 
         // ACT
-        var response = await _client.DeleteAsync($"/api/shoppingcart/Items/{cartItemId}");
+        var response = await _unauthenticatedClient.DeleteAsync($"/api/shoppingcart/Items/{cartItemId}");
 
         // ASSERT
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -240,11 +227,10 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     public async Task DeleteShoppingCartItem_ShouldReturn204NoContent_WhenItemDeletedSuccessfully()
     {
         // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
         long cartItemId = 1;
 
         // ACT
-        var response = await _client.DeleteAsync($"/api/shoppingcart/Items/{cartItemId}");
+        var response = await _authenticatedClient.DeleteAsync($"/api/shoppingcart/Items/{cartItemId}");
 
         // ASSERT
         // Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -254,11 +240,10 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
     public async Task DeleteShoppingCartItem_ShouldReturn400BadRequest_WhenItemNotFound()
     {
         // ARRANGE
-        _client.DefaultRequestHeaders.Add("Authorization", "Bearer valid_token");
-        long nonExistentCartItemId = 9999;
+        long nonExistentCartItemId = 99999;
 
         // ACT
-        var response = await _client.DeleteAsync($"/api/shoppingcart/Items/{nonExistentCartItemId}");
+        var response = await _authenticatedClient.DeleteAsync($"/api/shoppingcart/Items/{nonExistentCartItemId}");
 
         // ASSERT
         // Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
