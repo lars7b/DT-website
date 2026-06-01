@@ -22,7 +22,7 @@ public class RateLimitMiddleware : IMiddleware
         string cacheKey;
         int maxRequests;
 
-        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (!string.IsNullOrEmpty(userId))
         {
