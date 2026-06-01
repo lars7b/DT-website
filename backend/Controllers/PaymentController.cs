@@ -25,7 +25,7 @@ public sealed class PaymentController : ControllerBase
     )
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) //TODO check if id is long
+        if (userId == null || !long.TryParse(userId, out _))
         {
             return Unauthorized();
         }
@@ -97,7 +97,7 @@ public sealed class PaymentController : ControllerBase
     [HttpDelete("{id:long}")]
     public async Task<ActionResult> DeletePayment(long id, CancellationToken cancellationToken)
     {
-        bool succesful = await _paymentService.DeletePaymentAsync(id, cancellationToken);
+        bool succesful = await _paymentService.DeletePaymentAsync(id);
         if (succesful == false)
         {
             return BadRequest("Deleting was unsuccesful");

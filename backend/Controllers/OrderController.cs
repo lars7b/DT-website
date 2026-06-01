@@ -42,6 +42,7 @@ public class OrderController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetAllOrders(CancellationToken token)
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -50,7 +51,10 @@ public class OrderController : ControllerBase
             return Unauthorized();
         }
         List<OrderDto> orders = await _orderService.GetOrdersAsync(long.Parse(userId),token);
-        // check length list
+        if(orders == null || orders.Count < 1)
+        {
+            return NotFound();
+        }
         return Ok(orders);
     }
 
@@ -58,6 +62,7 @@ public class OrderController : ControllerBase
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateOrder()
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
