@@ -104,9 +104,9 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 app.UseCors("AllowReactApp");
-app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<RateLimitMiddleware>();
 app.MapControllers(); // Maps api routes
 
 app.Run();
