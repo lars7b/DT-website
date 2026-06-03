@@ -28,7 +28,7 @@ function App() {
           {/* Routes uitsluitend voor Customers */}
           <Route element={<ProtectedRoute allowedRoles={['Customer']} />}>
             <Route path="/profiel" element={<ProfilePage />} />
-            <Route path="/winkelmand" element={<ShoppingCartPage />} />
+            <Route path="/winkelwagen" element={<ShoppingCartPage />} />
             <Route path="/afrekenen" element={<CheckOutPage />} />
             <Route path="/bestellingen" element={<OrdersPage />} />
             <Route path="/bestelling/:id" element={<OrderDetailPage />} />

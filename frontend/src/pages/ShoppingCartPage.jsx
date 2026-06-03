@@ -1,95 +1,145 @@
-// ShoppingCartPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { Link } from 'react-router-dom';
 
-export default function ShoppingCartPage(){
-    // State variabelen voor het opslaan van de database gegevens en laad-statussen
-    const [shoppingcart, setshoppingcart] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+export default function ShoppingCartPage() {
+  const [cart, setCart] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    useEffect(() => {
-    // Backend request moet hier komen voor de shoppingcart.
-    // Voorbeeld endpoint: GET /api/shoppingcart
+  useEffect(() => {
     const fetchCart = async () => {
       setIsLoading(true);
       try {
-        // TODO: Vervang door daadwerkelijke fetch()
+        // 🔁 replace with real API call
+        // const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shoppingcart`, {
+        //   credentials: 'include'
+        // });
+        // if (!res.ok) throw new Error();
         // const data = await res.json();
 
-        // todo gebruikt mock data voor testen
-        const mockShoppingCart = [
-          { id: 1, customerid: 1, items: [{id: 1 , productid: 1 , quantity: 1}, {id: 2, productid: 2, quantity: 2}] },
-        ];
-        
-        setshoppingcart(mockShoppingCart);
+        const mockCart = {
+          id: 1,
+          customerId: 1,
+          items: [
+            { id: 1, productId: 1, quantity: 1 },
+            { id: 2, productId: 2, quantity: 2 }
+          ]
+        };
+
+        setCart(mockCart);
         setIsLoading(false);
       } catch (err) {
         setError('Fout bij het ophalen van de winkelwagen.');
         setIsLoading(false);
       }
     };
-    // TODO Fetch products of the shopping Cart
-    fetchCart();
-    }, []);
 
-    // todo fix rendering
+    fetchCart();
+  }, []);
+
+  const handleRemoveItem = async (cartItemId) => {
+    try {
+      // await fetch(`${import.meta.env.VITE_API_URL}/api/shoppingcart/items/${cartItemId}`, {
+      //   method: 'DELETE',
+      //   credentials: 'include'
+      // });
+
+      setCart(prev => ({
+        ...prev,
+        items: prev.items.filter(i => i.id !== cartItemId)
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleQuantityChange = async (item, newQty) => {
+    if (newQty < 1) return;
+
+    try {
+      // await fetch(`${import.meta.env.VITE_API_URL}/api/shoppingcart/items`, {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   credentials: 'include',
+      //   body: JSON.stringify({ id: item.id, productId: item.productId, quantity: newQty })
+      // });
+
+      setCart(prev => ({
+        ...prev,
+        items: prev.items.map(i =>
+          i.id === item.id ? { ...i, quantity: newQty } : i
+        )
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const totalItems = cart?.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
+
   return (
-    <div className="products-page-container min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-gray-50 font-sans">
       <Navbar />
-      
-      <div className="page-layout flex px-16 py-8 max-w-7xl mx-auto">
-        {/* Producten Grid & Sortering */}
-        <main className="main-content flex-1">
-          <div className="sorting-controls flex justify-end mb-6 text-sm">
-            <div className="sorting-wrapper flex items-center space-x-2">
-              <span className="sorting-label text-gray-500">Sorteer op:</span>
-              <select 
-                className="sorting-dropdown border border-gray-300 p-1 rounded bg-white cursor-pointer"
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
+
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <h1 className="text-2xl font-bold mb-6">Winkelwagen</h1>
+
+        {isLoading ? (
+          <div className="text-gray-500">Winkelwagen laden...</div>
+        ) : error ? (
+          <div className="text-red-500">{error}</div>
+        ) : !cart || cart.items.length === 0 ? (
+          <div className="text-gray-500">Je winkelwagen is leeg.</div>
+        ) : (
+          <div className="space-y-4">
+            {cart.items.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white p-4 flex justify-between items-center shadow-sm"
               >
-                <option value="price_asc">Prijs oplopend</option>
-                <option value="price_desc">Prijs aflopend</option>
-                <option value="newest">Nieuwste</option>
-              </select>
+                <div>
+                  <p className="font-semibold">Product #{item.productId}</p>
+
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      className="px-2 py-1 bg-gray-200"
+                      onClick={() =>
+                        handleQuantityChange(item, item.quantity - 1)
+                      }
+                    >
+                      -
+                    </button>
+
+                    <span>{item.quantity}</span>
+
+                    <button
+                      className="px-2 py-1 bg-gray-200"
+                      onClick={() =>
+                        handleQuantityChange(item, item.quantity + 1)
+                      }
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleRemoveItem(item.id)}
+                  className="text-red-500 hover:underline"
+                >
+                  Verwijder
+                </button>
+              </div>
+            ))}
+
+            <div className="mt-6 bg-white p-4 shadow-sm">
+              <p className="font-semibold">
+                Totaal items: {totalItems}
+              </p>
             </div>
           </div>
-
-          {isLoading ? (
-            <div className="loading-state text-center py-10 text-gray-500">Producten laden...</div>
-          ) : error ? (
-            <div className="error-state text-center py-10 text-red-500">{error}</div>
-          ) : (
-            <div className="product-grid grid grid-cols-3 gap-6">
-              {products.map((product) => (
-                <Link to={`/product/${product.id}`} key={product.id} className="product-card group cursor-pointer bg-white p-4 block hover:shadow-md transition-shadow">
-                  <div className="product-image-container relative w-full h-48 bg-gray-100 mb-4 flex items-center justify-center">
-                    <button 
-                      onClick={(e) => handleToggleFavorite(e, product.id)}
-                      className="favorite-toggle-btn absolute top-2 right-2 text-gray-400 hover:text-red-500 z-10"
-                      title="Toevoegen aan favorieten"
-                    >
-                      ♡
-                    </button>
-                    <span className="image-placeholder text-gray-400">[Afbeelding]</span>
-                  </div>
-                  <h3 className="product-name font-semibold text-sm">{product.name}</h3>
-                  <p className="product-price text-sm text-gray-600">
-                    € {parseFloat(product.price).toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </Link>
-              ))}
-              
-              {products.length === 0 && (
-                <div className="no-results col-span-3 text-center py-10 text-gray-500">
-                  Geen producten gevonden voor deze selectie.
-                </div>
-              )}
-            </div>
-          )}
-        </main>
+        )}
       </div>
     </div>
   );

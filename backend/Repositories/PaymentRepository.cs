@@ -79,13 +79,20 @@ public class PaymentRepository : IPaymentRepository
         return payment;
     }
 
-    public async Task<bool> Add(Payment payment)
+    
+    public async Task<Payment?> Add(Payment payment)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query =
-            "INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId, @Status);";
-        int result = await connection.ExecuteAsync(query, payment);
-        return result > 0;
+            // "INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId, @Status);";
+             @"INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (amount, Current_timestamp, @PaymentMethod, @OrderId, @Status)
+                SELECT SUM(order_items.price) as amount
+                    FROM orders AS o 
+                    JOIN order_items ON o.id = order_items.order_id 
+                    WHERE o.id=@OrderId 
+                    GROUP BY o.id RETURNING *;";
+        Payment? result = await connection.QuerySingleAsync<Payment>(query, payment);
+        return result;
     }
 
     public async Task<bool> Update(Payment payment)
@@ -145,5 +152,18 @@ public class PaymentRepository : IPaymentRepository
             """;
         decimal amount = await connection.ExecuteScalarAsync<decimal>(query, new { orderId });
         return amount;
+    }
+    public async Task<long?> GetPendingOrderIdForUser(long userId,CancellationToken token = default)
+    {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        string query = """
+            SELECT o.id 
+            FROM orders AS o 
+            JOIN customers AS c ON o.customer_id = c.id 
+            WHERE c.user_id = @userId AND o.status = 'Pending' 
+            LIMIT 1;
+            """;
+        long? orderId = await connection.ExecuteScalarAsync<long?>(query, new { userId });
+        return orderId;
     }
 }
