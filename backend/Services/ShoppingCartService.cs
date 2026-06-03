@@ -27,17 +27,11 @@ public sealed class ShoppingCartService : IShoppingCartService
                 Id = item.Id,
                 ProductId = item.ProductId,
                 Quantity = item.Quantity,
-                Product = item.Product == null
+                ProductName = item.Product == null
                     ? null
-                    : new ProductDto
-                    {
-                        Id = item.Product.Id,
-                        Name = item.Product.Name,
-                        Description = item.Product.Description,
-                        Price = item.Product.Price,
-                        CategoryName = item.Product.Category?.Name,
-                        SubcategoryName = item.Product.Subcategory?.Name,
-                    },
+                    : item.Product.Name,
+                ProductDescription = item.Product == null? null : item.Product.Description,
+                PricePerUnit = item.Product == null? null : item.Product.Price,
             })
             .ToList();
 

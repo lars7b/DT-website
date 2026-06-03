@@ -61,7 +61,7 @@ export default function ProductDetailPage() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/shoppingcart/items`,
+        `${import.meta.env.VITE_API_URL}/shoppingcart/items`,
         {
           method: "POST",
           headers: {
@@ -80,7 +80,7 @@ export default function ProductDetailPage() {
         throw new Error("Toevoegen aan winkelwagen mislukt");
       }
 
-      alert("Product toegevoegd aan winkelwagen");
+      // alert("Product toegevoegd aan winkelwagen");
     } catch (err) {
       console.error(err);
       alert("Fout bij toevoegen aan winkelwagen");

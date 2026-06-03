@@ -15,7 +15,7 @@ export default function ShoppingCartPage() {
         const token = localStorage.getItem("token");
 
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/ShoppingCart`,
+          `${import.meta.env.VITE_API_URL}/ShoppingCart`,
           {
             method: "GET",
             headers: {
@@ -53,7 +53,7 @@ export default function ShoppingCartPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/ShoppingCart/items/${cartItemId}`,
+        `${import.meta.env.VITE_API_URL}/ShoppingCart/items/${cartItemId}`,
         {
           method: "DELETE",
           headers: {
@@ -82,7 +82,7 @@ export default function ShoppingCartPage() {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/ShoppingCart/items`,
+        `${import.meta.env.VITE_API_URL}/ShoppingCart/items`,
         {
           method: "PUT",
           headers: {
@@ -135,9 +135,17 @@ export default function ShoppingCartPage() {
                 className="bg-white p-4 flex justify-between items-center shadow-sm"
               >
                 <div>
-                  <p className="font-semibold">Product #{item.productId}</p>
+                  <p className="font-semibold">{item.productName}</p>
 
-                  <div className="flex items-center gap-2 mt-2">
+                  <p className="text-sm text-gray-500">
+                    {item.productDescription}
+                  </p>
+
+                  <p className="text-sm font-bold mt-1">
+                    € {item.pricePerUnit?.toFixed(2)}
+                  </p>
+
+                  {/* <div className="flex items-center gap-2 mt-2">
                     <button
                       className="px-2 py-1 bg-gray-200"
                       onClick={() =>
@@ -157,7 +165,7 @@ export default function ShoppingCartPage() {
                     >
                       +
                     </button>
-                  </div>
+                  </div> */}
                 </div>
 
                 <button

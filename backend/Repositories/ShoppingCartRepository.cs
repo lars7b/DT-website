@@ -70,7 +70,6 @@ public class ShoppingCartRepository : IShoppingCartRepository
                 ON c.id = carts.customer_id
             JOIN products p
                 ON p.id = items.product_id
-
             WHERE c.user_id = @userId;
             """;
         IEnumerable<CartItem> items = await connection.QueryAsync<CartItem, Product, CartItem>(
