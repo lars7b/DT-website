@@ -147,9 +147,6 @@ public class OrderRepository : IOrderRepository
             sql,
             (order, item) =>
             {
-                Console.WriteLine(
-            $"Order={order.Id}, Item={item?.Id}, Product={item?.ProductId}"
-        );
                 if (!orderDict.TryGetValue(order.Id, out var existingOrder))
                 {
                     existingOrder = order;

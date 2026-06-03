@@ -65,7 +65,7 @@ export default function ShoppingCartPage() {
       if (!res.ok) {
         throw new Error();
       }
-
+      // await refreshCart();
       setCart((prev) => ({
         ...prev,
         items: prev.items.filter((i) => i.id !== cartItemId),
