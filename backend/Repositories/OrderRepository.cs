@@ -147,6 +147,9 @@ public class OrderRepository : IOrderRepository
             sql,
             (order, item) =>
             {
+                Console.WriteLine(
+            $"Order={order.Id}, Item={item?.Id}, Product={item?.ProductId}"
+        );
                 if (!orderDict.TryGetValue(order.Id, out var existingOrder))
                 {
                     existingOrder = order;
@@ -185,6 +188,11 @@ public class OrderRepository : IOrderRepository
                 new { userId },
                 transaction
             );
+            if (orderId == 0)
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
             int resultitems = await _connection.ExecuteAsync(
                 """
                 INSERT INTO order_items (order_id, product_id, quantity, price)
@@ -203,6 +211,11 @@ public class OrderRepository : IOrderRepository
                 new { orderId, userId },
                 transaction
             );
+            if (resultitems == 0)
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
             await _connection.ExecuteAsync(
                 """
                 DELETE FROM cart_items
@@ -253,15 +266,19 @@ public class OrderRepository : IOrderRepository
         try
         {
             string query = """
-                UPDATE orders SET status = @Status 
-                JOIN payments AS p ON p.order_id = orders.id
-                WHERE id = @Id AND (p.status = 'Paid' OR p.status = 'Completed');
+                UPDATE orders
+                SET status = @Status
+                WHERE orders.id = @Id;
                 """;
             int result = await _connection.ExecuteAsync(
                 query,
                 new { Status = order.Status, Id = order.Id },
                 transaction
             );
+            if (result == 0)
+            {
+                return false;
+            }
             result += await _connection.ExecuteAsync(
                 """
                 INSERT INTO order_status_history (order_id, status, status_date)

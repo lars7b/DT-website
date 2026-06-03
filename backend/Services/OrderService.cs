@@ -30,13 +30,23 @@ public class OrderService : IOrderService
             CustomerId = order.CustomerId,
             OrderDate = order.OrderDate,
             Status = order.Status,
+            Items = order.Items?.Select(item => new OrderItemDto
+            {
+                Id = item.Id,
+                ProductId = item.ProductId,
+                Quantity = item.Quantity,
+                Price = item.Price,
+                ProductName = item.Product == null
+                    ? null
+                    : item.Product.Name,
+                ProductDescription = item.Product == null ? null : item.Product.Description,
+            }).ToList(),
         };
         return dto;
     }
 
     public async Task<List<OrderDto>> GetOrdersAsync(long userid, CancellationToken token = default)
     {
-        //TODO
         List<Order> orders = await _orderRepository.GetOrdersAsync(userid);
         List<OrderDto> dtos = new List<OrderDto>();
         foreach (Order order in orders)
@@ -47,6 +57,15 @@ public class OrderService : IOrderService
                 CustomerId = order.CustomerId,
                 OrderDate = order.OrderDate,
                 Status = order.Status,
+                Items = order.Items?.Select(item => new OrderItemDto
+                {
+                    Id = item.Id,
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    Price = item.Price,
+                    ProductName = item.Product == null ? null : item.Product.Name,
+                    ProductDescription = item.Product == null ? null : item.Product.Description,
+                }).ToList(),
             };
             dtos.Add(dto);
         }
