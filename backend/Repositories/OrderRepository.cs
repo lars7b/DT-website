@@ -110,23 +110,25 @@ public class OrderRepository : IOrderRepository
                 o.order_date AS OrderDate,
                 o.status,
 
+                items.id AS ItemSplitId,
+
                 items.id,
                 items.order_id AS OrderId,
                 items.product_id AS ProductId,
                 items.quantity,
                 items.price
 
-            FROM orders AS o
+            FROM orders o
             INNER JOIN order_items items
-                ON o.id = items.order_id
+                ON o.id = items.order_id  
             """;
 
         if (userId != null)
         {
             sql += """
-                JOIN customers AS c
+                   INNER JOIN customers c
                     ON c.id = o.customer_id
-                JOIN users AS u
+                INNER JOIN users u
                     ON u.id = c.user_id
                 WHERE
                     c.user_id = @userId
@@ -135,7 +137,7 @@ public class OrderRepository : IOrderRepository
                         FROM users admin_user
                         WHERE admin_user.id = @userId
                         AND admin_user.role = 'Admin'
-                    );
+                    )
                 """;
         }
 
@@ -158,7 +160,7 @@ public class OrderRepository : IOrderRepository
                 return existingOrder;
             },
             new { userId },
-            splitOn: "id"
+            splitOn: "ItemSplitId"
         );
 
         return orderDict.Values.ToList();

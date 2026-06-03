@@ -1,65 +1,85 @@
-import React, { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import Navbar from "../components/Navbar";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [token] = useAuth();
 
   useEffect(() => {
     const fetchOrders = async () => {
       setIsLoading(true);
+
       try {
-        // const res = await fetch(`${import.meta.env.VITE_API_URL}/api/order`, {
-        //   credentials: 'include'
-        // });
-        // if (!res.ok) throw new Error();
-        // const data = await res.json();
-
-        const mockOrders = [
-          {
-            id: 1,
-            customerId: 1,
-            orderDate: '2026-06-01T10:30:00',
-            status: 'Processing',
-            items: [
-              { id: 1, orderId: 1, productId: 1, quantity: 2, price: 149.00 },
-              { id: 2, orderId: 1, productId: 2, quantity: 1, price: 120.00 }
-            ]
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/order`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-          {
-            id: 2,
-            customerId: 1,
-            orderDate: '2026-05-28T14:10:00',
-            status: 'Delivered',
-            items: [
-              { id: 3, orderId: 2, productId: 5, quantity: 1, price: 45.00 }
-            ]
-          }
-        ];
+        });
 
-        setOrders(mockOrders);
-        setIsLoading(false);
+        if (res.status === 404) {
+          setOrders([]);
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        setOrders(data);
       } catch (err) {
-        setError('Fout bij het ophalen van bestellingen.');
+        console.error(err);
+        setError("Fout bij het ophalen van bestellingen.");
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchOrders();
-  }, []);
-
+    if (token) {
+      fetchOrders();
+    }
+  }, [token]);
   const calculateTotal = (items) => {
     return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('nl-NL', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("nl-NL", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/order/${orderId}/cancel`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error();
+      }
+
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId ? { ...order, status: "Cancelled" } : order,
+        ),
+      );
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -78,16 +98,11 @@ export default function OrdersPage() {
         ) : (
           <div className="space-y-6">
             {orders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-white shadow-sm p-5 rounded-md"
-              >
+              <div key={order.id} className="bg-white shadow-sm p-5 rounded-md">
                 {/* ORDER HEADER */}
                 <div className="flex justify-between items-center mb-4">
                   <div>
-                    <p className="font-semibold">
-                      Bestelling #{order.id}
-                    </p>
+                    <p className="font-semibold">Bestelling #{order.id}</p>
                     <p className="text-sm text-gray-500">
                       {formatDate(order.orderDate)}
                     </p>
@@ -95,11 +110,11 @@ export default function OrdersPage() {
 
                   <span
                     className={`text-sm px-3 py-1 rounded-full ${
-                      order.status === 'Delivered'
-                        ? 'bg-green-100 text-green-700'
-                        : order.status === 'Cancelled'
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-yellow-100 text-yellow-700'
+                      order.status === "Delivered"
+                        ? "bg-green-100 text-green-700"
+                        : order.status === "Cancelled"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-yellow-100 text-yellow-700"
                     }`}
                   >
                     {order.status}
@@ -109,17 +124,10 @@ export default function OrdersPage() {
                 {/* ITEMS */}
                 <div className="border-t pt-4 space-y-2">
                   {order.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex justify-between text-sm"
-                    >
+                    <div key={item.id} className="flex justify-between text-sm">
                       <div>
-                        <p className="font-medium">
-                          Product #{item.productId}
-                        </p>
-                        <p className="text-gray-500">
-                          Aantal: {item.quantity}
-                        </p>
+                        <p className="font-medium">Product #{item.productId}</p>
+                        <p className="text-gray-500">Aantal: {item.quantity}</p>
                       </div>
 
                       <div className="text-right">
@@ -132,9 +140,7 @@ export default function OrdersPage() {
                 {/* TOTAL */}
                 <div className="border-t mt-4 pt-4 flex justify-between font-semibold">
                   <span>Totaal</span>
-                  <span>
-                    € {calculateTotal(order.items).toFixed(2)}
-                  </span>
+                  <span>€ {calculateTotal(order.items).toFixed(2)}</span>
                 </div>
 
                 {/* ACTIONS */}
@@ -146,8 +152,11 @@ export default function OrdersPage() {
                     Bekijk details
                   </Link>
 
-                  {order.status === 'Processing' && (
-                    <button className="text-red-500 text-sm hover:underline">
+                  {order.status === "Processing" && (
+                    <button
+                      onClick={() => handleCancelOrder(order.id)}
+                      className="text-red-500 text-sm hover:underline"
+                    >
                       Annuleren
                     </button>
                   )}

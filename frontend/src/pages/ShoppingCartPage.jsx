@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import Navbar from "../components/Navbar";
+import { Link } from "react-router-dom";
 
 export default function ShoppingCartPage() {
   const [cart, setCart] = useState(null);
@@ -10,27 +10,37 @@ export default function ShoppingCartPage() {
   useEffect(() => {
     const fetchCart = async () => {
       setIsLoading(true);
+
       try {
-        // 🔁 replace with real API call
-        // const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shoppingcart`, {
-        //   credentials: 'include'
-        // });
-        // if (!res.ok) throw new Error();
-        // const data = await res.json();
+        const token = localStorage.getItem("token");
 
-        const mockCart = {
-          id: 1,
-          customerId: 1,
-          items: [
-            { id: 1, productId: 1, quantity: 1 },
-            { id: 2, productId: 2, quantity: 2 }
-          ]
-        };
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/ShoppingCart`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
 
-        setCart(mockCart);
-        setIsLoading(false);
+        if (res.status === 404) {
+          setCart(null);
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        setCart(data);
       } catch (err) {
-        setError('Fout bij het ophalen van de winkelwagen.');
+        console.error(err);
+        setError("Fout bij het ophalen van de winkelwagen.");
+      } finally {
         setIsLoading(false);
       }
     };
@@ -40,14 +50,25 @@ export default function ShoppingCartPage() {
 
   const handleRemoveItem = async (cartItemId) => {
     try {
-      // await fetch(`${import.meta.env.VITE_API_URL}/api/shoppingcart/items/${cartItemId}`, {
-      //   method: 'DELETE',
-      //   credentials: 'include'
-      // });
+      const token = localStorage.getItem("token");
 
-      setCart(prev => ({
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/ShoppingCart/items/${cartItemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error();
+      }
+
+      setCart((prev) => ({
         ...prev,
-        items: prev.items.filter(i => i.id !== cartItemId)
+        items: prev.items.filter((i) => i.id !== cartItemId),
       }));
     } catch (err) {
       console.error(err);
@@ -58,18 +79,33 @@ export default function ShoppingCartPage() {
     if (newQty < 1) return;
 
     try {
-      // await fetch(`${import.meta.env.VITE_API_URL}/api/shoppingcart/items`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   credentials: 'include',
-      //   body: JSON.stringify({ id: item.id, productId: item.productId, quantity: newQty })
-      // });
+      const token = localStorage.getItem("token");
 
-      setCart(prev => ({
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/ShoppingCart/items`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: item.id,
+            productId: item.productId,
+            quantity: newQty,
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error();
+      }
+
+      setCart((prev) => ({
         ...prev,
-        items: prev.items.map(i =>
-          i.id === item.id ? { ...i, quantity: newQty } : i
-        )
+        items: prev.items.map((i) =>
+          i.id === item.id ? { ...i, quantity: newQty } : i,
+        ),
       }));
     } catch (err) {
       console.error(err);
@@ -134,9 +170,7 @@ export default function ShoppingCartPage() {
             ))}
 
             <div className="mt-6 bg-white p-4 shadow-sm">
-              <p className="font-semibold">
-                Totaal items: {totalItems}
-              </p>
+              <p className="font-semibold">Totaal items: {totalItems}</p>
             </div>
           </div>
         )}

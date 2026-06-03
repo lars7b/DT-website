@@ -12,7 +12,11 @@ public sealed class Product
     public int? CategoryId { get; set; }
     public int? SubcategoryId { get; set; }
 
-    // Names from SQL joins, useful for frontend display.
+    // // Names from SQL joins, useful for frontend display.
     public string? CategoryName { get; set; }
     public string? SubcategoryName { get; set; }
+
+    // whole objects for easier access in code
+    public Category? Category { get; set; }
+    public Subcategory? Subcategory { get; set; }
 }
