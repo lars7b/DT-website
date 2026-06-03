@@ -25,11 +25,11 @@ public sealed class PaymentController : ControllerBase
     )
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null || !long.TryParse(userId, out _))
+        if (userId == null || !long.TryParse(userId, out long parsedUserId))
         {
             return Unauthorized();
         }
-        PaymentDto? payment = await _paymentService.GetPaymentByIdAsync(id,long.Parse(userId), cancellationToken);
+        PaymentDto? payment = await _paymentService.GetPaymentByIdAsync(id, parsedUserId, cancellationToken);
         if (payment == null)
         {
             return NotFound();
@@ -37,6 +37,11 @@ public sealed class PaymentController : ControllerBase
         return Ok(payment);
     }
 
+    /// <summary>
+    /// returns all payments if user is admin otherwise only the users payments
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     [HttpGet] //TODO add query for admin per user or ...
     public async Task<ActionResult<IEnumerable<PaymentDto>>> GetAllPayments(
         CancellationToken cancellationToken
