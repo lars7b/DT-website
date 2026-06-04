@@ -104,7 +104,7 @@ public class PaymentRepository : IPaymentRepository
         return result > 0;
     }
 
-    public async Task<bool> Delete(long Id)
+    public async Task<bool> Delete(long Id, CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = "DELETE FROM payments WHERE id = @Id;";
