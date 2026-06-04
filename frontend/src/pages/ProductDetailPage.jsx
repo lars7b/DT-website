@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import {useNavigate} from "react-router-dom";
 
 
 export default function ProductDetailPage() {
   // useParams haalt het product ID uit de URL, bijv. /product/1
   // Zorg ervoor dat de route in App.jsx is ingesteld als: <Route path="/product/:id" element={<ProductDetailPage />} />
   const { id } = useParams();
+  const navigate = useNavigate();
 
   // State variabelen voor het opslaan van de database gegevens en laad-statussen
   const [product, setProduct] = useState(null);
@@ -79,7 +81,7 @@ export default function ProductDetailPage() {
       if (!response.ok) {
         throw new Error("Toevoegen aan winkelwagen mislukt");
       }
-
+      navigate("/winkelwagen");
       // alert("Product toegevoegd aan winkelwagen");
     } catch (err) {
       console.error(err);

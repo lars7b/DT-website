@@ -7,14 +7,14 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [token] = useAuth();
+  const {token} = useAuth();
 
   useEffect(() => {
     const fetchOrders = async () => {
       setIsLoading(true);
 
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/order`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/order`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -59,7 +59,7 @@ export default function OrdersPage() {
   const handleCancelOrder = async (orderId) => {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/order/${orderId}/cancel`,
+        `${import.meta.env.VITE_API_URL}/order/${orderId}/cancel`,
         {
           method: "PUT",
           headers: {
@@ -126,7 +126,7 @@ export default function OrdersPage() {
                   {order.items.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <div>
-                        <p className="font-medium">Product #{item.productId}</p>
+                        <p className="font-medium">{item.productName || `Product #${item.productId}`}</p>
                         <p className="text-gray-500">Aantal: {item.quantity}</p>
                       </div>
 
@@ -146,7 +146,7 @@ export default function OrdersPage() {
                 {/* ACTIONS */}
                 <div className="mt-4 flex gap-3">
                   <Link
-                    to={`/order/${order.id}`}
+                    to={`/bestelling/${order.id}`}
                     className="text-blue-600 text-sm hover:underline"
                   >
                     Bekijk details

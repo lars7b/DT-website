@@ -25,52 +25,84 @@ public class OrderRepository : IOrderRepository
         long? userId,
         CancellationToken token = default
     )
-    { //
-        await using NpgsqlConnection _connection = new NpgsqlConnection(_connectionString);
+    {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
 
-        if (userId == null)
+        string sql = """
+            SELECT
+                o.id,
+                o.customer_id AS CustomerId,
+                o.order_date AS OrderDate,
+                o.status,
+
+                items.id AS ItemSplitId,
+
+                items.id,
+                items.order_id AS OrderId,
+                items.product_id AS ProductId,
+                items.quantity,
+                items.price,
+
+                p.id AS ProductId,
+
+                p.id,
+                p.name,
+                p.description,
+                p.price
+
+            FROM orders o
+            JOIN order_items items
+                ON items.order_id = o.id 
+            JOIN products p
+                ON p.id = items.product_id 
+            """;
+
+        if (userId != null)
         {
-            string sql = """
-                SELECT 
-                    o.id, 
-                    o.customer_id AS customerid,
-                    o.order_date AS orderdate,
-                    o.status
-                FROM orders AS o
-                JOIN order_items AS items ON items.order_id = o.id 
-                WHERE o.id = @id;
+            sql += """
+                 INNER JOIN customers c
+                    ON c.id = o.customer_id
+                WHERE
+                    o.id = @id
+                    AND (
+                        c.user_id = @userId
+                        OR EXISTS (
+                            SELECT 1
+                            FROM users admin_user
+                            WHERE admin_user.id = @userId
+                            AND admin_user.role = 'Admin'
+                        )
+                    )
                 """;
-            Order? order = await _connection.QueryFirstOrDefaultAsync<Order>(sql, new { id });
-            return order;
         }
         else
         {
-            string sql = """
-                SELECT 
-                o.id, 
-                o.customer_id AS customerid ,
-                o.order_date AS orderdate,
-                o.status
-                FROM orders AS o
-                JOIN order_items AS items ON items.order_id = o.id 
-                JOIN customers ON customers.id = o.customer_id 
-                WHERE 
-                    o.id = @id AND 
-                    (customers.user_id = @userId
-                    OR EXISTS (
-                        SELECT 1
-                        FROM users admin_user
-                        WHERE admin_user.id = @userId
-                        AND admin_user.role = 'Admin'
-                    ));
+            sql += """
+                WHERE o.id = @id
                 """;
-            Order? order = await _connection.QueryFirstOrDefaultAsync<Order>(
-                sql,
-                new { userId, id }
-            );
-            return order;
         }
-        // https://stackoverflow.com/questions/7508322/how-do-i-map-lists-of-nested-objects-with-dapper
+
+        Order? result = null;
+
+        await connection.QueryAsync<Order, OrderItem,Product, Order>(
+            sql,
+            (order, item, product) =>
+            {
+                if (result == null)
+                {
+                    result = order;
+                    result.Items = new List<OrderItem>();
+                }
+                item.Product = product;
+                result.Items.Add(item);
+
+                return result;
+            },
+            new { id, userId },
+            splitOn: "ItemSplitId,ProductId"
+        );
+
+        return result;
     }
 
     public async Task<OrderItem?> GetOrderItemByIdAsync(
@@ -116,11 +148,20 @@ public class OrderRepository : IOrderRepository
                 items.order_id AS OrderId,
                 items.product_id AS ProductId,
                 items.quantity,
-                items.price
+                items.price,
+
+                p.id AS ProductId,
+
+                p.id,
+                p.name,
+                p.description,
+                p.price
 
             FROM orders o
-            INNER JOIN order_items items
+            JOIN order_items items
                 ON o.id = items.order_id  
+            JOIN products p
+                ON p.id = items.product_id  
             """;
 
         if (userId != null)
@@ -138,14 +179,15 @@ public class OrderRepository : IOrderRepository
                         WHERE admin_user.id = @userId
                         AND admin_user.role = 'Admin'
                     )
+                Order BY o.order_date DESC
                 """;
         }
 
         var orderDict = new Dictionary<long, Order>();
 
-        await connection.QueryAsync<Order, OrderItem, Order>(
+        await connection.QueryAsync<Order, OrderItem, Product, Order>(
             sql,
-            (order, item) =>
+            (order, item, product) =>
             {
                 if (!orderDict.TryGetValue(order.Id, out var existingOrder))
                 {
@@ -155,12 +197,13 @@ public class OrderRepository : IOrderRepository
                     orderDict.Add(existingOrder.Id, existingOrder);
                 }
 
+                item.Product = product;
                 existingOrder.Items.Add(item);
 
                 return existingOrder;
             },
             new { userId },
-            splitOn: "ItemSplitId"
+            splitOn: "ItemSplitId,ProductId"
         );
 
         return orderDict.Values.ToList();

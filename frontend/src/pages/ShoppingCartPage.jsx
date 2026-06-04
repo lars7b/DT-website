@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function ShoppingCartPage() {
   const [cart, setCart] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchCart = async () => {
       setIsLoading(true);
@@ -111,6 +111,33 @@ export default function ShoppingCartPage() {
       console.error(err);
     }
   };
+  const handlePlaceOrder = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/order`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      // optional UX improvement: clear cart UI
+      setCart((prev) => ({
+        ...prev,
+        items: [],
+      }));
+      navigate("/bestellingen");
+      // alert("Bestelling geplaatst!");
+    } catch (err) {
+      console.error(err);
+      alert("Fout bij plaatsen van bestelling");
+    }
+  };
 
   const totalItems = cart?.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
 
@@ -135,7 +162,12 @@ export default function ShoppingCartPage() {
                 className="bg-white p-4 flex justify-between items-center shadow-sm"
               >
                 <div>
-                  <p className="font-semibold">{item.productName}</p>
+                  <Link
+                    to={`/product/${item.productId}`}
+                    className="font-semibold text-blue-600 hover:underline"
+                  >
+                    {item.productName}
+                  </Link>
 
                   <p className="text-sm text-gray-500">
                     {item.productDescription}
@@ -144,6 +176,13 @@ export default function ShoppingCartPage() {
                   <p className="text-sm font-bold mt-1">
                     € {item.pricePerUnit?.toFixed(2)}
                   </p>
+
+                  <Link
+                    to={`/product/${item.productId}`}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Bekijk product
+                  </Link>
 
                   {/* <div className="flex items-center gap-2 mt-2">
                     <button
@@ -177,8 +216,15 @@ export default function ShoppingCartPage() {
               </div>
             ))}
 
-            <div className="mt-6 bg-white p-4 shadow-sm">
+            <div className="mt-6 bg-white p-4 shadow-sm flex justify-between items-center">
               <p className="font-semibold">Totaal items: {totalItems}</p>
+
+              <button
+                onClick={handlePlaceOrder}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded"
+              >
+                Bestelling plaatsen
+              </button>
             </div>
           </div>
         )}
