@@ -113,11 +113,25 @@ public sealed class EndpointsSmokeTests
         service.Setup(s => s.AddFavoriteAsync(7, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var controller = new FavoritesController(service.Object);
+var controller = new FavoritesController(service.Object);
+controller.ControllerContext = new ControllerContext
+{
+    HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+    {
+        User = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity(
+                new[]
+                {
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "7"),
+                },
+                "TestAuth"
+            )
+        ),
+    },
+};
 
-        // Act: we roepen de endpoint methode aan die een favorite toevoegt.
-        var result = await controller.AddFavorite(7, 10, CancellationToken.None);
-
+// Act: we roepen de endpoint methode aan die een favorite toevoegt.
+var result = await controller.AddFavorite(10, CancellationToken.None);
         // Assert: 201 Created en verwijzing naar de GetFavorites route.
         var created = Assert.IsType<CreatedAtActionResult>(result);
         Assert.Equal(nameof(FavoritesController.GetFavorites), created.ActionName);
