@@ -124,7 +124,9 @@ public class FavoriteRepository
             CustomerId = reader.GetInt32(reader.GetOrdinal("customer_id")),
             ProductId = reader.GetInt32(reader.GetOrdinal("product_id")),
             CreatedAt = reader.GetDateTime(reader.GetOrdinal("created_at")),
-            Name = reader.GetString(reader.GetOrdinal("product_name")),
+            Name = reader.IsDBNull(reader.GetOrdinal("product_name"))
+                ? string.Empty
+                : reader.GetString(reader.GetOrdinal("product_name")),
             Description = reader.IsDBNull(reader.GetOrdinal("product_description"))
                 ? null
                 : reader.GetString(reader.GetOrdinal("product_description")),
