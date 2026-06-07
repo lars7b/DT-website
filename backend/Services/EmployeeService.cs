@@ -1,5 +1,4 @@
 using Backend.DTOs;
-using Backend.Models;
 using Backend.Repositories;
 
 namespace Backend.Services;
@@ -13,13 +12,23 @@ public class EmployeeService : IEmployeeService
         _employeeRepository = employeeRepository;
     }
 
-    public async Task<EmployeeDto> GetEmployeeProfileAsync(int employeeId)
+    public async Task<EmployeeDto?> GetEmployeeProfileAsync(int userId)
     {
-        return default;
+        return await _employeeRepository.GetEmployeeProfileAsync(userId);
     }
 
     public async Task<(bool Success, string Message)> UpdateEmployeeAsync(int employeeId, EmployeeDto request)
     {
         return default;
+    }
+
+    public async Task<CustomerAdminDto?> GetCustomerByEmailAsync(string email)
+    {
+        return await _employeeRepository.GetCustomerByEmailAsync(email);
+    }
+    
+    public async Task<IEnumerable<OrderDto>> GetOrdersByUserIdAsync(int userId)
+    {
+        return await _employeeRepository.GetOrdersByUserIdAsync(userId);
     }
 }
