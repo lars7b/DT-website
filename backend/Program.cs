@@ -20,7 +20,15 @@ var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
 builder
-    .Services.AddAuthentication(options =>
+    .Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => 
+        policy.RequireRole("Admin"));
+
+    options.AddPolicy("EmployeeAccess", policy => 
+        policy.RequireRole("Employee", "Admin"));
+    })
+    .AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;

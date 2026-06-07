@@ -15,7 +15,17 @@ export default function AdminDashboard() {
   const [isInfoLoading, setIsInfoLoading] = useState(false);
   const [infoError, setInfoError] = useState("");
 
+  const [employeeForm, setEmployeeForm] = useState({email: '', password: '', firstName: '', lastName: '', phone: '', position: ''});
+  const [createStatus, setCreateStatus] = useState({ message: "", error: "" });
+
   const baseUrl = import.meta.env.VITE_API_URL;
+
+  const tabTitles = {
+  'dashboard': 'Overzicht',
+  'products': 'Producten Beheer',
+  'users': 'Bestellingen',
+  'create-employee': 'Nieuwe Medewerker'
+  };
 
   useEffect(() => {
   if (activeTab !== 'dashboard' || !token) return;
@@ -38,7 +48,32 @@ export default function AdminDashboard() {
   };
 
   fetchEmployeeProfile();
-}, [activeTab, token, baseUrl]);
+  }, [activeTab, token, baseUrl]);
+
+  const handleCreateEmployee = async (e) => {
+  e.preventDefault();
+  setCreateStatus({ message: "", error: "" });
+
+    try {
+      // Let op: pas de URL aan als de endpoint in een andere controller staat (bijv. /employee/employees)
+      const res = await fetch(`${baseUrl}/admin/employees`, { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(employeeForm)
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Fout bij het aanmaken van de medewerker.');
+      
+      setCreateStatus({ message: data.message, error: "" });
+      setEmployeeForm({ email: '', password: '', firstName: '', lastName: '', phone: '', position: '' });
+      } catch (err) {
+        setCreateStatus({ message: "", error: err.message });
+      }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex font-sans">
@@ -69,6 +104,14 @@ export default function AdminDashboard() {
           >
             Bestellingen
           </button>
+          {role === 'Admin' && (
+          <button
+            onClick={() => setActiveTab('create-employee')}
+            className={`w-full text-left px-4 py-2 rounded ${activeTab === 'create-employee' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
+          >
+            Nieuwe Medewerker
+          </button>
+          )}
         </nav>
         
         <div className="p-4 border-t border-gray-800">
@@ -84,7 +127,7 @@ export default function AdminDashboard() {
       {/* Admin Main Content */}
       <main className="flex-1 p-8 overflow-auto">
         <div className="bg-white rounded shadow-sm border border-gray-200 p-6 min-h-full">
-          <h2 className="text-2xl font-bold mb-6 capitalize">{activeTab}</h2>
+          <h2 className="text-2xl font-bold mb-6 capitalize">{tabTitles[activeTab]}</h2>
           
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
@@ -157,7 +200,7 @@ export default function AdminDashboard() {
           {activeTab === 'users' && (
             <div className="space-y-6">
               {/* Zoekbalk Sectie */}
-              <div className="bg-gray-50 p-4 rounded border border-gray-200 max-w-md">
+              <div>
                 <label className="block text-sm font-semibold mb-2">Zoek klant op e-mailadres</label>
                 <div className="flex gap-2">
                   <input 
@@ -268,6 +311,96 @@ export default function AdminDashboard() {
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'create-employee' && role === 'Admin' && (
+            <div>
+              
+              
+              <form onSubmit={handleCreateEmployee} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Voornaam</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={employeeForm.firstName}
+                      onChange={(e) => setEmployeeForm({...employeeForm, firstName: e.target.value})}
+                      className="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Achternaam</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={employeeForm.lastName}
+                      onChange={(e) => setEmployeeForm({...employeeForm, lastName: e.target.value})}
+                      className="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">E-mailadres</label>
+                    <input 
+                      type="email" 
+                      required
+                      value={employeeForm.email}
+                      onChange={(e) => setEmployeeForm({...employeeForm, email: e.target.value})}
+                      className="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Telefoonnummer</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={employeeForm.phone}
+                      onChange={(e) => setEmployeeForm({...employeeForm, phone: e.target.value})}
+                      className="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Functie (Position)</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="bijv. Klantenservice"
+                      value={employeeForm.position}
+                      onChange={(e) => setEmployeeForm({...employeeForm, position: e.target.value})}
+                      className="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Tijdelijk Wachtwoord</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={employeeForm.password}
+                      onChange={(e) => setEmployeeForm({...employeeForm, password: e.target.value})}
+                      className="w-full border border-gray-300 p-2 rounded text-sm focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 flex items-center justify-between">
+                  <button 
+                    type="submit"
+                    className="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded text-sm font-semibold transition"
+                  >
+                    Opslaan als Medewerker
+                  </button>
+
+                  {createStatus.message && <span className="text-sm text-green-600 font-medium">{createStatus.message}</span>}
+                  {createStatus.error && <span className="text-sm text-red-600 font-medium">{createStatus.error}</span>}
+                </div>
+              </form>
             </div>
           )}
 

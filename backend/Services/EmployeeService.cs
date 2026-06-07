@@ -1,5 +1,6 @@
 using Backend.DTOs;
 using Backend.Repositories;
+using Isopoh.Cryptography.Argon2;
 
 namespace Backend.Services;
 
@@ -30,5 +31,19 @@ public class EmployeeService : IEmployeeService
     public async Task<IEnumerable<OrderDto>> GetOrdersByUserIdAsync(int userId)
     {
         return await _employeeRepository.GetOrdersByUserIdAsync(userId);
+    }
+
+    public async Task<(bool Success, string Message)> CreateEmployeeAsync(CreateEmployeeDto request)
+    {
+        string passwordHash = Argon2.Hash(request.Password);
+
+        var result = await _employeeRepository.CreateEmployeeAsync(request, passwordHash);
+
+        if (!result)
+        {
+            return (false, "E-mailadres of telefoonnummer is al in gebruik.");
+        }
+
+        return (true, $"Medewerker succesvol aangemaakt.");
     }
 }
