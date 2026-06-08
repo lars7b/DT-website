@@ -19,28 +19,42 @@ public class OrderService : IOrderService
         CancellationToken token = default
     )
     {
-        Order? order = await _orderRepository.GetOrderByIdAsync(id,userid);
+        Order? order = await _orderRepository.GetOrderByIdAsync(id, userid);
         if (order == null)
         {
             return null;
         }
+        List<OrderStatusHistory> history = await _orderRepository.GetHistoryByOrderIdAsync(
+            order.Id
+        );
         OrderDto dto = new OrderDto
         {
             Id = order.Id,
             CustomerId = order.CustomerId,
             OrderDate = order.OrderDate,
             Status = order.Status,
-            Items = order.Items?.Select(item => new OrderItemDto
-            {
-                Id = item.Id,
-                ProductId = item.ProductId,
-                Quantity = item.Quantity,
-                Price = item.Price,
-                ProductName = item.Product == null
-                    ? null
-                    : item.Product.Name,
-                ProductDescription = item.Product == null ? null : item.Product.Description,
-            }).ToList(),
+
+            Items =
+                order
+                    .Items?.Select(item => new OrderItemDto
+                    {
+                        Id = item.Id,
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                        Price = item.Price,
+                        ProductName = item.Product?.Name,
+                        ProductDescription = item.Product?.Description,
+                    })
+                    .ToList() ?? new List<OrderItemDto>(),
+
+            StatusHistory = history
+                ?.Select(h => new OrderStatusHistoryDto
+                {
+                    OrderId = h.OrderId,
+                    Status = h.Status,
+                    Date = h.Date,
+                })
+                .ToList(),
         };
         return dto;
     }
@@ -57,15 +71,17 @@ public class OrderService : IOrderService
                 CustomerId = order.CustomerId,
                 OrderDate = order.OrderDate,
                 Status = order.Status,
-                Items = order.Items?.Select(item => new OrderItemDto
-                {
-                    Id = item.Id,
-                    ProductId = item.ProductId,
-                    Quantity = item.Quantity,
-                    Price = item.Price,
-                    ProductName = item.Product == null ? null : item.Product.Name,
-                    ProductDescription = item.Product == null ? null : item.Product.Description,
-                }).ToList(),
+                Items = order
+                    .Items?.Select(item => new OrderItemDto
+                    {
+                        Id = item.Id,
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                        Price = item.Price,
+                        ProductName = item.Product == null ? null : item.Product.Name,
+                        ProductDescription = item.Product == null ? null : item.Product.Description,
+                    })
+                    .ToList(),
             };
             dtos.Add(dto);
         }
@@ -77,7 +93,7 @@ public class OrderService : IOrderService
         return await _orderRepository.CreateOrder(userid);
     }
 
-    public async Task<bool> UpdateOrderAsync(OrderDto orderdto,long id)
+    public async Task<bool> UpdateOrderAsync(OrderDto orderdto, long id)
     {
         Order order = new Order
         {
@@ -90,7 +106,7 @@ public class OrderService : IOrderService
 
     public async Task<bool> DeleteOrderAsync(long id, long userId)
     {
-        Order? order = await _orderRepository.GetOrderByIdAsync(id,userId);
+        Order? order = await _orderRepository.GetOrderByIdAsync(id, userId);
         if (order == null || order.Status != "Pending")
         {
             return false;
@@ -100,13 +116,13 @@ public class OrderService : IOrderService
 
     public async Task<bool> CancelOrderAsync(long id, long userId)
     {
-        Order? order = await _orderRepository.GetOrderByIdAsync(id,userId);
-        if (order == null || order.Status != "Pending")
+        Order? order = await _orderRepository.GetOrderByIdAsync(id, userId);
+        if (order == null || (order.Status != "Pending" && order.Status != "Processing"))
         {
             return false;
         }
         // if cancelled succesfully should also change storage product in the store back to the amount
-        order.Status = "Cancelled";
+        order.Status = order.Status == "Pending" ? "Cancelled" : "Refunded";
         return await _orderRepository.UpdateOrder(order);
     }
 }

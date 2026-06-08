@@ -47,6 +47,18 @@ export default function ShoppingCartPage() {
 
     fetchCart();
   }, []);
+  const calculateTotal = () => {
+    return cart.items.reduce(
+      (sum, item) => sum + item.pricePerUnit * item.quantity,
+      0,
+    );
+  };
+  const calculateItem = () => {
+    return cart.items.reduce(
+      (sum, item) => sum + item.pricePerUnit * item.quantity,
+      0,
+    );
+  };
 
   const handleRemoveItem = async (cartItemId) => {
     try {
@@ -84,7 +96,7 @@ export default function ShoppingCartPage() {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/ShoppingCart/items`,
         {
-          method: "PUT",
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -131,8 +143,8 @@ export default function ShoppingCartPage() {
         ...prev,
         items: [],
       }));
-      // navigate("/bestellingen"); 
-       navigate("/afrekenen"); 
+      // navigate("/bestellingen");
+      navigate("/afrekenen");
       // alert("Bestelling geplaatst!");
     } catch (err) {
       console.error(err);
@@ -160,34 +172,32 @@ export default function ShoppingCartPage() {
             {cart.items.map((item) => (
               <div
                 key={item.id}
-                className="bg-white p-4 flex justify-between items-center shadow-sm"
+                className="bg-white p-5 rounded-lg shadow-sm flex justify-between items-start gap-6"
               >
-                <div>
+                {/* LEFT SIDE */}
+                <div className="flex-1">
                   <Link
                     to={`/product/${item.productId}`}
-                    className="font-semibold text-blue-600 hover:underline"
+                    className="font-semibold text-blue-600 hover:underline text-lg"
                   >
                     {item.productName}
                   </Link>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 mt-1">
                     {item.productDescription}
                   </p>
 
-                  <p className="text-sm font-bold mt-1">
-                    € {item.pricePerUnit?.toFixed(2)}
+                  <p className="text-sm text-gray-600 mt-2">
+                    € {item.pricePerUnit.toFixed(2)} per stuk
                   </p>
+                </div>
 
-                  <Link
-                    to={`/product/${item.productId}`}
-                    className="text-sm text-blue-600 hover:underline"
-                  >
-                    Bekijk product
-                  </Link>
-
-                  {/* <div className="flex items-center gap-2 mt-2">
+                {/* RIGHT SIDE */}
+                <div className="flex flex-col items-end gap-3">
+                  {/* quantity controls */}
+                  <div className="flex items-center border rounded overflow-hidden">
                     <button
-                      className="px-2 py-1 bg-gray-200"
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
                       onClick={() =>
                         handleQuantityChange(item, item.quantity - 1)
                       }
@@ -195,30 +205,45 @@ export default function ShoppingCartPage() {
                       -
                     </button>
 
-                    <span>{item.quantity}</span>
+                    <span className="px-4">{item.quantity}</span>
 
                     <button
-                      className="px-2 py-1 bg-gray-200"
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
                       onClick={() =>
                         handleQuantityChange(item, item.quantity + 1)
                       }
                     >
                       +
                     </button>
-                  </div> */}
-                </div>
+                  </div>
 
-                <button
-                  onClick={() => handleRemoveItem(item.id)}
-                  className="text-red-500 hover:underline"
-                >
-                  Verwijder
-                </button>
+                  {/* totals */}
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">Totaal</p>
+
+                    <p className="font-bold text-lg">
+                      € {(item.pricePerUnit * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
+
+                  {/* remove */}
+                  <button
+                    onClick={() => handleRemoveItem(item.id)}
+                    className="text-red-500 hover:text-red-700 text-sm"
+                  >
+                    Verwijder
+                  </button>
+                </div>
               </div>
             ))}
 
             <div className="mt-6 bg-white p-4 shadow-sm flex justify-between items-center">
               <p className="font-semibold">Totaal items: {totalItems}</p>
+              {/* TOTAL */}
+              <div className="flex justify-between pt-4 font-bold">
+                <span>Totaal</span>
+                <span>€ {calculateTotal().toFixed(2)}</span>
+              </div>
 
               <button
                 onClick={handlePlaceOrder}
@@ -230,6 +255,7 @@ export default function ShoppingCartPage() {
           </div>
         )}
       </div>
+      
     </div>
   );
 }

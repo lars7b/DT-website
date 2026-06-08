@@ -152,7 +152,7 @@ export default function OrdersPage() {
                     Bekijk details
                   </Link>
 
-                  {order.status === "Processing" && (
+                  {(order.status === "Pending" || order.status === "Pending") && (
                     <button
                       onClick={() => handleCancelOrder(order.id)}
                       className="text-red-500 text-sm hover:underline"

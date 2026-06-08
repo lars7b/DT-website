@@ -40,6 +40,14 @@ public sealed class PaymentService : IPaymentService
         return paymentDto;
     }
 
+    /// <summary>
+    /// gets all payments for the user
+    /// if user is admin it should return all payment
+    /// and if user is customer it should return only the payments of that particulair user
+    /// </summary>
+    /// <param name="userid">the id of the user that is logged in, that is taken from the token</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<IEnumerable<PaymentDto>> GetAllPaymentsAsync(
         long userid,
         CancellationToken cancellationToken = default

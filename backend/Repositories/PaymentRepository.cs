@@ -81,10 +81,15 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<Payment?> Add(Payment payment)
     {
+        // now status is set to paid even if that is not the case in real life situations
+        // but for the case of this project and for ease
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
-        string query =
-            // "INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId, @Status);";
-            @"INSERT INTO payments
+        await connection.OpenAsync();
+        using var transaction = await connection.BeginTransactionAsync();
+        try
+        {
+            string query =
+                @"INSERT INTO payments
                 (
                     amount,
                     payment_date,
@@ -97,16 +102,51 @@ public class PaymentRepository : IPaymentRepository
                     CURRENT_TIMESTAMP,
                     @PaymentMethod,
                     @OrderId,
-                    @Status
+                    'Paid'
                 FROM order_items oi
                 WHERE oi.order_id = @OrderId
                 RETURNING *;";
-        Payment? result = await connection.QuerySingleOrDefaultAsync<Payment>(query, payment);
-        if (result == null)
-        {
-            return null;
+            Payment? result = await connection.QuerySingleOrDefaultAsync<Payment>(
+                query,
+                payment,
+                transaction
+            );
+            if (result == null)
+            {
+                await transaction.RollbackAsync();
+                return null;
+            }
+            int status = await connection.ExecuteAsync(
+                "UPDATE orders SET status = 'Processing' WHERE id = @OrderId;",
+                new { OrderId = payment.OrderId },
+                transaction
+            );
+            if (status != 1) // assuming
+            {
+                await transaction.RollbackAsync();
+                return null;
+            }
+            status += await connection.ExecuteAsync(
+                """
+                INSERT INTO order_status_history (order_id, status, status_date)
+                VALUES (@orderId, 'Processing', current_timestamp);
+                """,
+                new { orderId = payment.OrderId },
+                transaction
+            );
+            if (status != 2) // assuming
+            {
+                await transaction.RollbackAsync();
+                return null;
+            }
+            await transaction.CommitAsync();
+            return result;
         }
-        return result;
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<bool> Update(Payment payment)

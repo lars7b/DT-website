@@ -84,7 +84,7 @@ public class OrderRepository : IOrderRepository
 
         Order? result = null;
 
-        await connection.QueryAsync<Order, OrderItem,Product, Order>(
+        await connection.QueryAsync<Order, OrderItem, Product, Order>(
             sql,
             (order, item, product) =>
             {
@@ -327,14 +327,32 @@ public class OrderRepository : IOrderRepository
                 new { orderId = order.Id, status = order.Status },
                 transaction
             );
+            if (order.Status == "Refunded")
+            {
+                result += await _connection.ExecuteAsync(
+                    """
+                    UPDATE payments SET status = 'Refunded' WHERE order_id = @OrderId;
+                    """,
+                    new { orderId = order.Id, status = order.Status },
+                    transaction
+                );
+            }
             await transaction.CommitAsync();
-            return result == 2;
+            return result >= 2;
         }
         catch
         {
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    public async Task<List<OrderStatusHistory>> GetHistoryByOrderIdAsync(long orderId)
+    {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        string sql = @"SELECT * FROM order_status_history WHERE order_id = @orderId;";
+        IEnumerable<OrderStatusHistory> history = await connection.QueryAsync<OrderStatusHistory>(sql, new { orderId });
+        return history.ToList();
     }
 
     public async Task<bool> DeleteOrder(long id)

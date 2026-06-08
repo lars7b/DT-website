@@ -80,37 +80,37 @@ export default function OrderDetailPage() {
   };
   const [paymentMethod, setPaymentMethod] = useState("iDEAL");
 
-const handlePay = async () => {
-  try {
-    const token = localStorage.getItem("token");
+// const handlePay = async () => {
+//   try {
+//     const token = localStorage.getItem("token");
 
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL}/Payment`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          paymentMethod,
-          orderId: order.id,
-        }),
-      }
-    );
+//     const res = await fetch(
+//       `${import.meta.env.VITE_API_URL}/Payment`,
+//       {
+//         method: "POST",
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({
+//           paymentMethod,
+//           orderId: order.id,
+//         }),
+//       }
+//     );
 
-    if (!res.ok) {
-      throw new Error();
-    }
+//     if (!res.ok) {
+//       throw new Error();
+//     }
 
-    // alert("Betaling aangemaakt");
+//     // alert("Betaling aangemaakt");
 
-    // refresh order
-  } catch (err) {
-    console.error(err);
-    alert("Betaling mislukt");
-  }
-};
+//     // refresh order
+//   } catch (err) {
+//     console.error(err);
+//     alert("Betaling mislukt");
+//   }
+// };
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("nl-NL", {
       year: "numeric",
@@ -236,6 +236,26 @@ const handlePay = async () => {
               Betaal
             </button>
           </div> */}
+
+          {/* <div className="space-y-4">
+  {history.map((entry) => (
+    <div key={entry.id} className="flex gap-3">
+      <div className="w-3 h-3 rounded-full bg-green-500 mt-1" />
+
+      <div>
+        <p className="font-medium">
+          {entry.status}
+        </p>
+
+        <p className="text-sm text-gray-500">
+          {new Date(
+            entry.statusDate
+          ).toLocaleString("nl-NL")}
+        </p>
+      </div>
+    </div>
+  ))}
+</div> */}
         </div>
       </div>
     </div>

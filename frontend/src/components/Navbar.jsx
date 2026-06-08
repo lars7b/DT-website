@@ -1,12 +1,34 @@
 // src/components/Navbar.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
   // Haal de status en de logout functie op uit de AuthContext
   const { isLoggedIn, isAdmin, logout } = useAuth();
+  const [cartCount, setCartCount] = useState(0);
+  useEffect(() => {
+    fetchCartCount();
+  }, []);
 
+  const fetchCartCount = async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/ShoppingCart`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) return;
+
+    const cart = await res.json();
+
+    const total =
+      cart.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+
+    setCartCount(total);
+  };
   return (
     <nav className="navbar-container flex items-center justify-between px-8 py-4 border-b border-gray-200 bg-white">
       <Link to="/" className="brand-logo text-2xl font-bold">
@@ -70,7 +92,7 @@ export default function Navbar() {
         >
           🛒
           <span className="cart-badge absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-            0
+            {cartCount}
           </span>
         </Link>
       </div>

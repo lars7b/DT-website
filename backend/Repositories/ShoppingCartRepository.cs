@@ -102,23 +102,6 @@ public class ShoppingCartRepository : IShoppingCartRepository
         return result > 0;
     }
 
-    public async Task<ShoppingCart> CreateCart(
-        ShoppingCart cart,
-        NpgsqlConnection? con = null,
-        NpgsqlTransaction? transaction = null
-    )
-    {
-        string query =
-            @"INSERT INTO shopping_carts (customer_id) VALUES (@CustomerId)
-            RETURNING *;";
-        if (con == null)
-        {
-            con = new NpgsqlConnection(_connectionString);
-        }
-        ShoppingCart result = await con.QuerySingleAsync<ShoppingCart>(query, cart, transaction);
-        return result;
-    }
-
     /// <summary>
     /// creates a cart for the user/customer if it doesn't exist and returns the cart id
     /// </summary>
@@ -216,7 +199,11 @@ public class ShoppingCartRepository : IShoppingCartRepository
             }
             else
             {
-                await AddItem(item, connection, transaction);
+                if (!await AddItem(item, connection, transaction))
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
             }
 
             await transaction.CommitAsync();
