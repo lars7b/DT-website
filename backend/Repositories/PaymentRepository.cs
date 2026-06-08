@@ -79,19 +79,33 @@ public class PaymentRepository : IPaymentRepository
         return payment;
     }
 
-    
     public async Task<Payment?> Add(Payment payment)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query =
             // "INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (@Amount, @PaymentDate, @PaymentMethod, @OrderId, @Status);";
-             @"INSERT INTO payments (amount, payment_date, payment_method, order_id, status) VALUES (amount, Current_timestamp, @PaymentMethod, @OrderId, @Status)
-                SELECT SUM(order_items.price) as amount
-                    FROM orders AS o 
-                    JOIN order_items ON o.id = order_items.order_id 
-                    WHERE o.id=@OrderId 
-                    GROUP BY o.id RETURNING *;";
-        Payment? result = await connection.QuerySingleAsync<Payment>(query, payment);
+            @"INSERT INTO payments
+                (
+                    amount,
+                    payment_date,
+                    payment_method,
+                    order_id,
+                    status
+                )
+                SELECT
+                    SUM(oi.price * oi.quantity),
+                    CURRENT_TIMESTAMP,
+                    @PaymentMethod,
+                    @OrderId,
+                    @Status
+                FROM order_items oi
+                WHERE oi.order_id = @OrderId
+                RETURNING *;";
+        Payment? result = await connection.QuerySingleOrDefaultAsync<Payment>(query, payment);
+        if (result == null)
+        {
+            return null;
+        }
         return result;
     }
 
@@ -112,15 +126,18 @@ public class PaymentRepository : IPaymentRepository
         return result > 0;
     }
 
-    public async Task<List<Payment>> GetByOrderId(long orderId,CancellationToken token = default)
+    public async Task<List<Payment>> GetByOrderId(long orderId, CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = "SELECT * FROM payments WHERE order_id = @orderId;";
-        IEnumerable<Payment> payments = await connection.QueryAsync<Payment>(query, new { orderId });
+        IEnumerable<Payment> payments = await connection.QueryAsync<Payment>(
+            query,
+            new { orderId }
+        );
         return payments.ToList();
     }
 
-    public async Task<List<Payment>> GetByUser(long userId,CancellationToken token = default)
+    public async Task<List<Payment>> GetByUser(long userId, CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = """
@@ -140,7 +157,7 @@ public class PaymentRepository : IPaymentRepository
         return payments.ToList();
     }
 
-    public async Task<decimal> GetAmountForOrder(long orderId,CancellationToken token = default)
+    public async Task<decimal> GetAmountForOrder(long orderId, CancellationToken token = default)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = """
@@ -153,7 +170,17 @@ public class PaymentRepository : IPaymentRepository
         decimal amount = await connection.ExecuteScalarAsync<decimal>(query, new { orderId });
         return amount;
     }
-    public async Task<long?> GetPendingOrderIdForUser(long userId,CancellationToken token = default)
+
+    /// <summary>
+    /// returns one pending order id for the user if it exists
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public async Task<long?> GetPendingOrderIdForUser(
+        long userId,
+        CancellationToken token = default
+    )
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = """

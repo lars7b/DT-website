@@ -131,7 +131,8 @@ export default function ShoppingCartPage() {
         ...prev,
         items: [],
       }));
-      navigate("/bestellingen");
+      // navigate("/bestellingen"); 
+       navigate("/afrekenen"); 
       // alert("Bestelling geplaatst!");
     } catch (err) {
       console.error(err);

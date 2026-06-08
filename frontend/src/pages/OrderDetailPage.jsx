@@ -16,14 +16,11 @@ export default function OrderDetailPage() {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/order/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/order/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         if (res.status === 404) {
           setError("Bestelling niet gevonden.");
@@ -81,7 +78,39 @@ export default function OrderDetailPage() {
       0,
     );
   };
+  const [paymentMethod, setPaymentMethod] = useState("iDEAL");
 
+const handlePay = async () => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/Payment`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentMethod,
+          orderId: order.id,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error();
+    }
+
+    // alert("Betaling aangemaakt");
+
+    // refresh order
+  } catch (err) {
+    console.error(err);
+    alert("Betaling mislukt");
+  }
+};
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("nl-NL", {
       year: "numeric",
@@ -185,6 +214,28 @@ export default function OrderDetailPage() {
               Annuleren
             </button>
           )}
+          {/* <div className="mt-6 bg-white p-6 shadow-sm">
+            <h2 className="font-semibold text-lg mb-4">Betaling</h2>
+
+            <p className="mb-4">Te betalen: € {calculateTotal().toFixed(2)}</p>
+
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="border p-2 rounded"
+            >
+              <option value="iDEAL">iDEAL</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="PayPal">PayPal</option>
+            </select>
+
+            <button
+              onClick={handlePay}
+              className="ml-4 bg-green-600 text-white px-4 py-2 rounded"
+            >
+              Betaal
+            </button>
+          </div> */}
         </div>
       </div>
     </div>
