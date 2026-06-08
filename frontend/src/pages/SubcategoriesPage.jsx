@@ -19,7 +19,7 @@ export default function SubcategoriesPage() {
         setError(null);
 
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/subcategories?categoryId=${categoryId}`,
+          `${import.meta.env.VITE_API_URL}/subcategories?categoryId=${encodeURIComponent(categoryId ?? '')}`,
           { signal: controller.signal }
         );
 
