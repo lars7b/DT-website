@@ -49,4 +49,18 @@ public class CustomerControllerTests : IntegrationTestBase
         // ASSERT
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetMyProfile_ShouldReturn404NotFound_WhenProfileDoesNotExist()
+    {
+        // ARRANGE
+        int nonExistentUserId = 9999;
+        AuthenticateClient(nonExistentUserId, "Customer");
+
+        // ACT
+        var response = await _client.GetAsync("/api/customer/me");
+
+        // ASSERT
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

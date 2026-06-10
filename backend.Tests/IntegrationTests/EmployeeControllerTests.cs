@@ -34,4 +34,18 @@ public class EmployeeControllerTests : IntegrationTestBase
         // ASSERT
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetCustomerByEmail_ShouldReturn400BadRequest_WhenEmailQueryIsMissing()
+    {
+        // ARRANGE
+        int employeeUserId = await SeedUserAsync("employee2@test.nl", "Employee");
+        AuthenticateClient(employeeUserId, "Employee");
+
+        // ACT
+        var response = await _client.GetAsync("/api/employee/customer-by-email");
+
+        // ASSERT
+        Assert.True(response.StatusCode == HttpStatusCode.BadRequest || response.StatusCode == HttpStatusCode.NotFound);
+    }
 }

@@ -9,6 +9,10 @@ using Xunit;
 
 namespace Backend.Tests.IntegrationTests;
 
+/// Basisklasse voor alle integratietesten
+/// Laat nieuwe testklassen overerven van IntegrationTestBase in plaats van IClassFixture<CustomApiFactory>
+/// Dit centraliseert boilerplate code voor authenticatie en database-setup
+
 public abstract class IntegrationTestBase : IClassFixture<CustomApiFactory>
 {
     protected readonly HttpClient _client;
@@ -22,6 +26,8 @@ public abstract class IntegrationTestBase : IClassFixture<CustomApiFactory>
         _dbConnectionString = config.GetConnectionString("DefaultConnection")!;
     }
 
+    /// Gebruik deze methode in de ARRANGE-fase van een test om de _client te voorzien van een geldig JWT-token
+    /// Alle API-aanroepen in de ACT-fase worden uitgevoerd als deze specifieke gebruiker
     protected void AuthenticateClient(int userId, string role)
     {
         var token = GenerateTestJwt(userId, role);
@@ -49,6 +55,8 @@ public abstract class IntegrationTestBase : IClassFixture<CustomApiFactory>
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    /// Gebruik deze methode in de ARRANGE-fase om snel testgebruikers aan de database toe te voegen
+    /// Als je iets anders wilt seeden, zoals een product of bestelling, kun je deze methode als voorbeeld gebruiken
     protected async Task<int> SeedUserAsync(string email, string role)
     {
         await using var connection = new NpgsqlConnection(_dbConnectionString);
