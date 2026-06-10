@@ -1,19 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
-using Xunit;
 using Backend.DTOs;
+using Xunit;
 
 namespace Backend.Tests.IntegrationTests;
 
-public class AuthControllerTests : IClassFixture<CustomApiFactory>
+public class AuthControllerTests : IntegrationTestBase
 {
-    private readonly HttpClient _client;
-
-    public AuthControllerTests(CustomApiFactory factory)
-    {
-        // Vraagt de factory om een HttpClient te maken
-        _client = factory.CreateClient();
-    }
+    public AuthControllerTests(CustomApiFactory factory) : base(factory) { }
 
     [Fact]
     public async Task Register_ShouldReturn200Ok_WhenValidDataIsProvided()
@@ -22,7 +16,9 @@ public class AuthControllerTests : IClassFixture<CustomApiFactory>
         var request = new RegisterDto 
         { 
             Email = "nieuw@ikea.nl", 
-            Password = "VeiligWachtwoord123!" 
+            Password = "VeiligWachtwoord123!",
+            FirstName = "Nieuwe",
+            LastName = "Klant"
         };
 
         // ACT
