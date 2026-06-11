@@ -5,7 +5,8 @@
       "Bash(PGPASSWORD=\"Ziyabraza1!\" psql -U postgres -h localhost -p 5432 -c \"DROP DATABASE IF EXISTS dt_website;\")",
       "Bash(PGPASSWORD=\"Ziyabraza1!\" psql -U postgres -h localhost -p 5432 -c \"SELECT pg_terminate_backend\\(pid\\) FROM pg_stat_activity WHERE datname = 'dt_website' AND pid <> pg_backend_pid\\(\\);\")",
       "Bash(PGPASSWORD=\"Ziyabraza1!\" psql -U postgres -h localhost -p 5432 -c \"CREATE DATABASE dt_website;\")",
-      "Bash(PGPASSWORD=\"Ziyabraza1!\" psql -U postgres -h localhost -p 5432 -d dt_website -f \"c:\\\\Users\\\\Ziyab\\\\Documents\\\\GitHub\\\\DT-website\\\\database\\\\01-schema.sql\")"
+      "Bash(PGPASSWORD=\"Ziyabraza1!\" psql -U postgres -h localhost -p 5432 -d dt_website -f \"c:\\\\Users\\\\Ziyab\\\\Documents\\\\GitHub\\\\DT-website\\\\database\\\\01-schema.sql\")",
+      "Bash(PGPASSWORD=\"Ziyabraza1!\" psql -U postgres -h localhost -p 5432 -d dt_website -f \"c:\\\\Users\\\\Ziyab\\\\Documents\\\\GitHub\\\\DT-website\\\\database\\\\02-data.sql\")"
     ]
   }
 }
