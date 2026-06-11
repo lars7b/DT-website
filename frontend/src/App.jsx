@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import CategoriesPage from './pages/CategoriesPage';
+import SubcategoriesPage from './pages/SubcategoriesPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
@@ -18,6 +19,7 @@ function App() {
           {/* Publieke routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/categorieen" element={<CategoriesPage />} />
+          <Route path="/categorieen/:categoryId" element={<SubcategoriesPage />} />
           <Route path="/producten" element={<ProductsPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/login" element={<LoginPage />} />

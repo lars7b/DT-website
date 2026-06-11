@@ -1,0 +1,26 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container Diagram — WoonWereld
+
+Person(customer, "Klant", "Bezoekt de webshop,\nbeheerd profiel en favorieten.")
+Person(employee, "Medewerker / Admin", "Beheert producten,\nbestellingen en gebruikers.")
+
+System_Boundary(woonwereld, "WoonWereld Webshop") {
+
+    Container(frontend, "Frontend", "React 19 + Vite\nNginx (productie)", "Single Page Application.\nVerzorgt de gebruikersinterface\nvoor klanten en admins.")
+
+    Container(backend, "Backend API", "ASP.NET Core 9\nC#", "REST API met JWT-authenticatie.\nVerwerkt alle business logica\nen data access.")
+
+    ContainerDb(database, "Database", "PostgreSQL 18", "Slaat gebruikers, producten,\ncategorieën, bestellingen,\nfavorieten en sessies op.")
+}
+
+Rel(customer, frontend, "Gebruikt", "HTTPS / Browser")
+Rel(employee, frontend, "Gebruikt", "HTTPS / Browser")
+
+Rel(frontend, backend, "API-aanroepen", "REST / JSON\nHTTPS:8080")
+Rel(backend, database, "Leest en schrijft", "Dapper / SQL\nTCP:5432")
+
+@enduml
