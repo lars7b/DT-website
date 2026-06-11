@@ -1,15 +1,19 @@
 using Backend.Models;
 using Backend.Repositories;
+using StackExchange.Redis;
+using System.Text.Json;
 
 namespace Backend.Services;
 
 public class ProductService : IProductService
 {
     private readonly ProductRepository _repository;
+    private readonly IDatabase _redis;
 
-    public ProductService(ProductRepository repository)
+    public ProductService(ProductRepository repository,IConnectionMultiplexer redis)
     {
         _repository = repository;
+        _redis = redis.GetDatabase();
     }
 
     public async Task<IReadOnlyList<Product>> GetProductsAsync(
@@ -29,7 +33,29 @@ public class ProductService : IProductService
         {
             return null;
         }
-
-        return await _repository.GetProductByIdAsync(id, cancellationToken);
+        string cacheKey = $"product:{id}";
+        var cachedData = await _redis.StringGetAsync(cacheKey);
+        if (!cachedData.IsNullOrEmpty)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<Product>(cachedData!);
+            }
+            catch
+            {
+                await _redis.KeyDeleteAsync(cacheKey);
+            }
+        }
+        Product? product = await _repository.GetProductByIdAsync(id, cancellationToken);
+        if (product == null)
+        {
+            return null;
+        }
+        await _redis.StringSetAsync(
+            cacheKey,
+            JsonSerializer.Serialize(product),
+            TimeSpan.FromMinutes(15)
+        );
+        return product;
     }
 }

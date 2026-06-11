@@ -1,7 +1,6 @@
 namespace Backend.DTOs;
 
-public class ChangeEmailDto
+public class DeleteAccountDto
 {
-    public required string NewEmail { get; set; }
     public required string Password { get; set; }
 }
