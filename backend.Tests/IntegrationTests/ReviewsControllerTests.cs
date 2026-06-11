@@ -136,6 +136,6 @@ public class ReviewsControllerTests : IntegrationTestBase
         command.Parameters.AddWithValue("Rating", rating);
         command.Parameters.AddWithValue("Comment", comment);
 
-        return (int)await command.ExecuteScalarAsync()!;
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
     }
 }

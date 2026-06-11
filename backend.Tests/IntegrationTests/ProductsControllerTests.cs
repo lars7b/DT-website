@@ -88,6 +88,6 @@ public class ProductsControllerTests : IntegrationTestBase
         command.Parameters.AddWithValue("Name", name);
         command.Parameters.AddWithValue("Price", price);
 
-        return (int)await command.ExecuteScalarAsync()!;
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
     }
 }
