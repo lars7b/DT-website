@@ -8,6 +8,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminDashboard from './pages/AdminDashboard';
+import SearchPage from './pages/SearchPage';
 
 function App() {
   return (
@@ -20,6 +21,8 @@ function App() {
           <Route path="/producten" element={<ProductsPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/zoeken" element={<SearchPage />} />
+
 
           {/* Routes uitsluitend voor Customers */}
           <Route element={<ProtectedRoute allowedRoles={['Customer']} />}>
