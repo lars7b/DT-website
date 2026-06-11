@@ -162,9 +162,24 @@ var result = await controller.AddFavorite(10, CancellationToken.None);
             .ReturnsAsync(true);
 
         var controller = new FavoritesController(service.Object);
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+            {
+                User = new System.Security.Claims.ClaimsPrincipal(
+                    new System.Security.Claims.ClaimsIdentity(
+                        new[]
+                        {
+                            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "7"),
+                        },
+                        "TestAuth"
+                    )
+                ),
+            },
+        };
 
         // Act: we roepen de endpoint methode aan die een favorite verwijdert.
-        var result = await controller.RemoveFavorite(7, 10, CancellationToken.None);
+        var result = await controller.RemoveFavorite(10, CancellationToken.None);
 
         // Assert: 204 No Content betekent dat de delete is uitgevoerd.
         Assert.IsType<NoContentResult>(result);
