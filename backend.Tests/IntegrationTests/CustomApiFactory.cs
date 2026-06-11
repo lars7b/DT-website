@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Testcontainers.PostgreSql;
+using Testcontainers.Redis;
 using Xunit;
 using Npgsql;
 using System.Threading.Tasks;
@@ -16,17 +17,23 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .WithUsername("postgres")
         .WithPassword("postgres")
         .Build();
+    
+    private readonly RedisContainer _redisContainer = new RedisBuilder()
+        .WithImage("redis:7-alpine")
+        .Build();
 
     public CustomApiFactory()
     {
-        Environment.SetEnvironmentVariable("JwtSettings__Key", "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!");
+        Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!");
         Environment.SetEnvironmentVariable("JwtSettings__Issuer", "TestIssuer");
         Environment.SetEnvironmentVariable("JwtSettings__Audience", "TestAudience");
+        Environment.SetEnvironmentVariable("DB_PASSWORD", "dummy_db_password");
+        Environment.SetEnvironmentVariable("REDIS_PASSWORD", "dummy_redis_password");
     }
 
     public async ValueTask InitializeAsync()
     {
-        await _dbContainer.StartAsync();
+        await Task.WhenAll(_dbContainer.StartAsync(), _redisContainer.StartAsync());
 
         await InitializeDatabaseAsync();
     }
@@ -72,13 +79,14 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                { "ConnectionStrings:DefaultConnection", _dbContainer.GetConnectionString() }
+                { "ConnectionStrings:DefaultConnection", _dbContainer.GetConnectionString() },
+                { "ConnectionStrings:RedisConnection", _redisContainer.GetConnectionString() }
             });
         });
     }
 
     public new async ValueTask DisposeAsync()
     {
-        await _dbContainer.DisposeAsync();
+        await Task.WhenAll(_dbContainer.DisposeAsync(), _redisContainer.DisposeAsync());
     }
 }
