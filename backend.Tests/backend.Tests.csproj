@@ -33,9 +33,7 @@
     </PackageReference>
     <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\backend\backend.csproj" />
-  </ItemGroup>
+
 
   <ItemGroup>
     <ProjectReference Include="..\backend\Backend.csproj" />
