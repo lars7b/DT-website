@@ -22,7 +22,9 @@ public class AuthControllerTests : IClassFixture<CustomApiFactory>
         var request = new RegisterDto 
         { 
             Email = "nieuw@ikea.nl", 
-            Password = "VeiligWachtwoord123!" 
+            Password = "VeiligWachtwoord123!",
+            FirstName = "Test",
+            LastName = "Gebruiker"
         };
 
         // ACT
