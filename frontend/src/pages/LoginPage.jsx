@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+// import { useCart } from '../context/CartContext';
 import Navbar from '../components/Navbar';
 
 export default function LoginPage() {
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  
+  // const { refreshCart } = useCart();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,6 +68,7 @@ export default function LoginPage() {
       if (isLoginView) {
         login(data.token);
         navigate('/'); 
+        // await refreshCart();
       } else {
         setSuccessMessage(data.message || 'Account succesvol aangemaakt! Je kunt nu inloggen.');
         setIsLoginView(true); 

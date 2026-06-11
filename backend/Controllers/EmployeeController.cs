@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Backend.Models;
 using Backend.Services;
 using Backend.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -26,7 +25,7 @@ public class EmployeeController : ControllerBase
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         return int.Parse(userIdClaim!.Value);
     }
-
+    
     [HttpGet("me")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -39,6 +38,7 @@ public class EmployeeController : ControllerBase
         return profile;
     }
 
+    /*
     [HttpPatch("me")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -50,6 +50,28 @@ public class EmployeeController : ControllerBase
         if (!result.Success) return NotFound(new { message = result.Message });
         
         return Ok(new { message = result.Message });
+    }
+    */
+
+    [HttpGet("customer-by-email")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CustomerAdminDto>> GetCustomerByEmail([FromQuery] string email)
+    {
+        var customer = await _employeeService.GetCustomerByEmailAsync(email);
+        if (customer == null) 
+        {
+            return NotFound(new { message = "Geen klant gevonden met dit e-mailadres." });
+        }
+        return Ok(customer);
+    }
+
+    [HttpGet("customers/{userId}/orders")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<OrderDto>>> GetCustomerOrders(int userId)
+    {
+        var orders = await _employeeService.GetOrdersByUserIdAsync(userId);
+        return Ok(orders);
     }
     
     /*

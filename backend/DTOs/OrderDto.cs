@@ -10,4 +10,5 @@ public sealed class OrderDto
     /// </summary>
     public string Status { get; set; } = "Pending";
     public List<OrderItemDto> Items { get; set; } = new List<OrderItemDto>();
+    public List<OrderStatusHistoryDto>? StatusHistory { get; set; } = [];
 }

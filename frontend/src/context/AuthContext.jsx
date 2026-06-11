@@ -14,7 +14,7 @@ export function AuthProvider({ children }) {
     try {
       const decoded = jwtDecode(jwt);
       // .NET zet de rol vaak in deze specifieke ClaimType URI, of gewoon in 'role'
-      return decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decoded.role || 'Customer';
+      return decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decoded.role || null;
     } catch (error) {
       console.error("Fout bij decoderen JWT", error);
       return null;

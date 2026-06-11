@@ -8,4 +8,5 @@ public interface IOrderRepository
     Task<bool> CreateOrder(long userid);
     Task<bool> UpdateOrder(Order order);
     Task<bool> DeleteOrder(long id);
+    Task<List<OrderStatusHistory>> GetHistoryByOrderIdAsync(long orderid);
 }

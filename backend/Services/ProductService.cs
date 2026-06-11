@@ -29,6 +29,10 @@ public class ProductService : IProductService
 
     public async Task<Product?> GetProductByIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        if (id <= 0)
+        {
+            return null;
+        }
         string cacheKey = $"product:{id}";
         var cachedData = await _redis.StringGetAsync(cacheKey);
         if (!cachedData.IsNullOrEmpty)
@@ -41,10 +45,6 @@ public class ProductService : IProductService
             {
                 await _redis.KeyDeleteAsync(cacheKey);
             }
-        }
-        if (id <= 0)
-        {
-            return null;
         }
         Product? product = await _repository.GetProductByIdAsync(id, cancellationToken);
         if (product == null)

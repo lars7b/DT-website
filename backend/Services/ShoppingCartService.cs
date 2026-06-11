@@ -64,6 +64,11 @@ public sealed class ShoppingCartService : IShoppingCartService
                 Id = item.Id,
                 ProductId = item.ProductId,
                 Quantity = item.Quantity,
+                ProductName = item.Product == null
+                    ? null
+                    : item.Product.Name,
+                ProductDescription = item.Product == null? null : item.Product.Description,
+                PricePerUnit = item.Product == null? null : item.Product.Price,
             })
             .ToList();
         ShoppingCartDto shoppingcart = new ShoppingCartDto
