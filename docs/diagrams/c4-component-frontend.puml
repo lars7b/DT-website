@@ -1,0 +1,70 @@
+@startuml C4_Component_Frontend
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram — Frontend (React 19 SPA)
+
+Person(customer, "Klant", "Gebruikt de webshop.")
+Person(employee, "Medewerker / Admin", "Gebruikt het admin dashboard.")
+Container_Ext(backend, "Backend API", "ASP.NET Core 9", "Verwerkt REST-verzoeken.")
+
+Container_Boundary(frontend, "Frontend (React 19 + Vite)") {
+
+    ' --- Context ---
+    Component(authCtx, "AuthContext", "React Context", "Beheert JWT-token, gebruikersrol\nen login/logout-staat.\nSlaat token op in localStorage.")
+
+    ' --- Router & Guards ---
+    Component(router, "App / Router", "React Router 7", "Definieert publieke en\nbeveiligde routes.")
+    Component(protectedRoute, "ProtectedRoute", "React Component", "Bewaakt routes op basis\nvan rol. Redirect niet-\ngeautoriseerde gebruikers.")
+
+    ' --- Navigatie ---
+    Component(navbar, "Navbar", "React Component", "Globale navigatiebalk\nmet login/logout-actie.")
+
+    ' --- Publieke pagina's ---
+    Component(homePage, "HomePage", "React Page", "Landingspagina met\npopulaire producten.")
+    Component(loginPage, "LoginPage", "React Page", "Gecombineerd\nlogin / registratieformulier.")
+    Component(productsPage, "ProductsPage", "React Page", "Productcatalogus met\nzoek-, categorie- en\nsorteerfuncties. Favorieten.")
+    Component(productDetail, "ProductDetailPage", "React Page", "Detailweergave van\néén product.")
+    Component(categoriesPage, "CategoriesPage", "React Page", "Overzicht van\nalle categorieën.")
+    Component(subcategoriesPage, "SubcategoriesPage", "React Page", "Subcategorieën\nper categorie.")
+
+    ' --- Beveiligde pagina's ---
+    Component(profilePage, "ProfilePage", "React Page\n[Rol: Customer]", "Klantprofiel beheren:\ngegevens, wachtwoord,\ne-mail, bestellingen.")
+    Component(adminDash, "AdminDashboard", "React Page\n[Rol: Admin/Employee]", "Tabbladen: overzicht,\nproducten, bestellingen,\ngebruikers.")
+}
+
+' Personen → Router
+Rel(customer, router, "Navigeert via", "Browser")
+Rel(employee, router, "Navigeert via", "Browser")
+
+' Router → Pagina's
+Rel(router, navbar, "Rendert altijd")
+Rel(router, homePage, "Route: /")
+Rel(router, loginPage, "Route: /login")
+Rel(router, productsPage, "Route: /producten")
+Rel(router, productDetail, "Route: /product/:id")
+Rel(router, categoriesPage, "Route: /categorieen")
+Rel(router, subcategoriesPage, "Route: /categorieen/:id")
+Rel(router, protectedRoute, "Wraps beveiligde routes")
+Rel(protectedRoute, profilePage, "Route: /profiel\n(Customer)")
+Rel(protectedRoute, adminDash, "Route: /admin\n(Admin/Employee)")
+
+' Pagina's → AuthContext
+Rel(loginPage, authCtx, "login() / logout()")
+Rel(navbar, authCtx, "Leest rol en token")
+Rel(protectedRoute, authCtx, "Controleert rol")
+Rel(profilePage, authCtx, "Leest gebruikers-ID")
+Rel(adminDash, authCtx, "Leest rol")
+Rel(productsPage, authCtx, "Leest gebruikers-ID\nvoor favorieten")
+
+' Pagina's → Backend API
+Rel(loginPage, backend, "POST /api/auth/login\nPOST /api/auth/register", "REST/JSON")
+Rel(productsPage, backend, "GET /api/products\nGET /api/categories\nGET/POST/DELETE favorieten", "REST/JSON")
+Rel(productDetail, backend, "GET /api/products/:id", "REST/JSON")
+Rel(categoriesPage, backend, "GET /api/categories", "REST/JSON")
+Rel(subcategoriesPage, backend, "GET /api/subcategories", "REST/JSON")
+Rel(profilePage, backend, "GET/PATCH /api/customers/me\nGET /api/customers/:id/orders\nPUT /api/auth/change-password", "REST/JSON")
+Rel(adminDash, backend, "GET /api/employee/me\nAdmin endpoints", "REST/JSON")
+
+@enduml

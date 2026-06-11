@@ -34,7 +34,7 @@ public class AuthService : IAuthService
         var createdCustomer = await _userRepository.CreateUserWithCustomerAsync(newUser, request.FirstName, request.LastName);
         if (createdCustomer == null)
         {
-            return (false, "Registration failed.");
+            return (false, "E-mailadres is al in gebruik.");
         }
         return (true, "Registration successful.");
     }
@@ -52,10 +52,10 @@ public class AuthService : IAuthService
 
     public async Task<(bool Success, string Message)> ChangePasswordAsync(int userId, ChangePasswordDto passwordDetails)
     {
-        User? user = await _userRepository.GetUserByIdAsync(userId);
-        if(user == null) return (false, "Update failed.");
-        bool isValid = Argon2.Verify(user.PasswordHash, passwordDetails.CurrentPassword);
-        if (!isValid) return (false, "Update failed.");
+        if (!await ValidateCurrentPasswordAsync(userId, passwordDetails.CurrentPassword))
+        {
+            return (false, "Onjuist huidig wachtwoord. Wachtwoord is niet gewijzigd.");
+        }
 
         string newPasswordHash = Argon2.Hash(passwordDetails.NewPassword);
         var updateStatus = await _userRepository.ChangePasswordAsync(userId, newPasswordHash);
@@ -67,6 +67,11 @@ public class AuthService : IAuthService
 
     public async Task<(bool Success, string Message)> ChangeEmailAsync(int userId, ChangeEmailDto emailDetails)
     {
+        if (!await ValidateCurrentPasswordAsync(userId, emailDetails.Password))
+        {
+            return (false, "Onjuist wachtwoord. E-mail is niet gewijzigd.");
+        }
+
         var updateStatus = await _userRepository.ChangeEmailAsync(userId, emailDetails.NewEmail);
        
         if (!updateStatus) return (false, "Update failed.");
@@ -97,5 +102,13 @@ public class AuthService : IAuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private async Task<bool> ValidateCurrentPasswordAsync(int userId, string currentPassword)
+    {
+        User? user = await _userRepository.GetUserByIdAsync(userId);
+        if (user == null) return false;
+
+        return Argon2.Verify(user.PasswordHash, currentPassword);
     }
 }
