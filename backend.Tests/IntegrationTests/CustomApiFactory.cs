@@ -22,7 +22,10 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .WithImage("redis:7-alpine")
         .Build();
 
-    public CustomApiFactory() { }
+    public CustomApiFactory() 
+    {
+        Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!");
+    }
 
     public async ValueTask InitializeAsync()
     {
