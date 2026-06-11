@@ -9,4 +9,5 @@ public interface IEmployeeRepository
     Task<bool> UpdateEmployeeAsync(int employeeId, EmployeeDto request);
     Task<CustomerAdminDto?> GetCustomerByEmailAsync(string email);
     Task<IEnumerable<OrderDto>> GetOrdersByUserIdAsync(int userId);
+    Task<bool> CreateEmployeeAsync(CreateEmployeeDto employeeDetails, string passwordHash);
 }

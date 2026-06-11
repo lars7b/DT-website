@@ -8,7 +8,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Employee,Admin")]
+[Authorize(Policy = "EmployeeAccess")]
 
 public class EmployeeController : ControllerBase
 {

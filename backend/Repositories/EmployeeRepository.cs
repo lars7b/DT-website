@@ -83,4 +83,60 @@ public class EmployeeRepository : IEmployeeRepository
             throw;
         }
     }
+
+    public async Task<bool> CreateEmployeeAsync(CreateEmployeeDto employeeDetails, string passwordHash)
+    {
+        try
+        {
+            await using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            await using var transaction = await connection.BeginTransactionAsync();
+
+            try
+            {
+                var sqlUser = @"
+                    INSERT INTO users (email, password_hash, role) 
+                    VALUES (@Email, @PasswordHash, 'Employee') 
+                    RETURNING id;";
+
+                var userId = await connection.ExecuteScalarAsync<int>(sqlUser, new 
+                { 
+                    Email = employeeDetails.Email, 
+                    PasswordHash = passwordHash 
+                }, transaction);
+
+                var sqlEmployee = @"
+                    INSERT INTO employees (user_id, first_name, last_name, phone, position) 
+                    VALUES (@UserId, @FirstName, @LastName, @Phone, @Position);";
+
+                await connection.ExecuteAsync(sqlEmployee, new 
+                { 
+                    UserId = userId, 
+                    FirstName = employeeDetails.FirstName, 
+                    LastName = employeeDetails.LastName, 
+                    Phone = employeeDetails.Phone,
+                    Position = employeeDetails.Position
+                }, transaction);
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (PostgresException ex) when (ex.SqlState == "23505")
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fout bij het aanmaken van medewerker met e-mail {Email}", employeeDetails.Email);
+            throw;
+        }
+    }
 }

@@ -1,19 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
-using Xunit;
 using Backend.DTOs;
+using Xunit;
 
 namespace Backend.Tests.IntegrationTests;
 
-public class AuthControllerTests : IClassFixture<CustomApiFactory>
+public class AuthControllerTests : IntegrationTestBase
 {
-    private readonly HttpClient _client;
-
-    public AuthControllerTests(CustomApiFactory factory)
-    {
-        // Vraagt de factory om een HttpClient te maken
-        _client = factory.CreateClient();
-    }
+    public AuthControllerTests(CustomApiFactory factory) : base(factory) { }
 
     [Fact]
     public async Task Register_ShouldReturn200Ok_WhenValidDataIsProvided()
@@ -22,7 +16,9 @@ public class AuthControllerTests : IClassFixture<CustomApiFactory>
         var request = new RegisterDto 
         { 
             Email = "nieuw@ikea.nl", 
-            Password = "VeiligWachtwoord123!" 
+            Password = "VeiligWachtwoord123!",
+            FirstName = "Nieuwe",
+            LastName = "Klant"
         };
 
         // ACT
@@ -31,8 +27,49 @@ public class AuthControllerTests : IClassFixture<CustomApiFactory>
         // ASSERT
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // Optioneel: Controleert de tekst in de response
         var responseString = await response.Content.ReadAsStringAsync();
         Assert.Contains("Registration successful", responseString);
+    }
+
+    [Fact]
+    public async Task Register_ShouldReturn409Conflict_WhenEmailAlreadyExists()
+    {
+        // ARRANGE
+        string existingEmail = "bestaand@ikea.nl";
+        await SeedUserAsync(existingEmail, "Customer");
+
+        var request = new RegisterDto 
+        { 
+            Email = existingEmail, 
+            Password = "AnderWachtwoord123!",
+            FirstName = "Nieuwe",
+            LastName = "Klant"
+        };
+
+        // ACT
+        var response = await _client.PostAsJsonAsync("/api/auth/register", request);
+
+        // ASSERT
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode); 
+        
+        var responseString = await response.Content.ReadAsStringAsync();
+        Assert.Contains("E-mailadres is al in gebruik.", responseString);
+    }
+
+    [Fact]
+    public async Task Register_ShouldReturn400BadRequest_WhenRequiredFieldsAreMissing()
+    {
+        // ARRANGE
+        var request = new 
+        { 
+            Email = "incompleet@ikea.nl"
+            // Password, FirstName en LastName ontbreken
+        };
+
+        // ACT
+        var response = await _client.PostAsJsonAsync("/api/auth/register", request);
+
+        // ASSERT
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }
