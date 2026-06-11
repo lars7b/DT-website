@@ -93,10 +93,24 @@ public sealed class EndpointsSmokeTests
             .ReturnsAsync(false);
 
         var controller = new FavoritesController(service.Object);
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+            {
+                User = new System.Security.Claims.ClaimsPrincipal(
+                    new System.Security.Claims.ClaimsIdentity(
+                        new[]
+                        {
+                            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "42"),
+                        },
+                        "TestAuth"
+                    )
+                ),
+            },
+        };
 
         // Act: we roepen de endpoint methode aan voor favorites van klant 42.
-        var result = await controller.GetFavorites(42, CancellationToken.None);
-
+        var result = await controller.GetFavorites(CancellationToken.None);
         // Assert: 404 omdat de klant niet bestaat.
         Assert.IsType<NotFoundResult>(result.Result);
     }
