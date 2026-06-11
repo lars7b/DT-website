@@ -87,6 +87,7 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public new async ValueTask DisposeAsync()
     {
-        await Task.WhenAll(_dbContainer.DisposeAsync(), _redisContainer.DisposeAsync());
+        await _dbContainer.DisposeAsync();
+        await _redisContainer.DisposeAsync();
     }
 }
