@@ -25,6 +25,9 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     public CustomApiFactory() 
     {
         Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!");
+        Environment.SetEnvironmentVariable("JwtSettings__Key", "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!");
+        Environment.SetEnvironmentVariable("JwtSettings__Issuer", "TestIssuer");
+        Environment.SetEnvironmentVariable("JwtSettings__Audience", "TestAudience");
     }
 
     public async ValueTask InitializeAsync()
