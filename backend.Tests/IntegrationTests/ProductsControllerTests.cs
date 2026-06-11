@@ -17,7 +17,7 @@ public class ProductsControllerTests : IntegrationTestBase
         await SeedProductAsync("Test Bank", 899.00m);
 
         // ACT
-        var response = await _client.GetAsync("/api/producten");
+        var response = await _client.GetAsync("/api/Products");
 
         // ASSERT
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -35,7 +35,7 @@ public class ProductsControllerTests : IntegrationTestBase
         var productId = await SeedProductAsync("Test Stoel", 149.00m);
 
         // ACT
-        var response = await _client.GetAsync($"/api/product/{productId}");
+        var response = await _client.GetAsync($"/api/Products/{productId}");
 
         // ASSERT
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -60,7 +60,7 @@ public class ProductsControllerTests : IntegrationTestBase
         };
 
         // ACT
-        var response = await _client.PostAsJsonAsync("/api/product", request);
+        var response = await _client.PostAsJsonAsync("/api/Products", request);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
