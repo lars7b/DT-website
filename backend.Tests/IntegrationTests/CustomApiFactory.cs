@@ -22,7 +22,7 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .WithImage("redis:7-alpine")
         .Build();
 
-    public CustomApiFactory() 
+    public CustomApiFactory()
     {
         Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!");
         Environment.SetEnvironmentVariable("JwtSettings__Key", "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!");
@@ -92,7 +92,7 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 { "ConnectionStrings:DefaultConnection", _dbContainer.GetConnectionString() },
-                { "ConnectionStrings:RedisConnection", _redisContainer.GetConnectionString() },
+                { "ConnectionStrings:RedisDefaultConnection", _redisContainer.GetConnectionString() },
 
                 { "DB_PASSWORD", "dummy_db_password" },
                 { "REDIS_PASSWORD", "dummy_redis_password" },
