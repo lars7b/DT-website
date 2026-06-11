@@ -5,6 +5,9 @@ namespace Backend.Services;
 
 public interface IEmployeeService
 {
-    Task<EmployeeDto> GetEmployeeProfileAsync(int employeeId);
+    Task<EmployeeDto?> GetEmployeeProfileAsync(int userId);
     Task<(bool Success, string Message)> UpdateEmployeeAsync(int employeeId, EmployeeDto request);
+    Task<CustomerAdminDto?> GetCustomerByEmailAsync(string email);
+    Task<IEnumerable<OrderDto>> GetOrdersByUserIdAsync(int userId);
+    Task<(bool Success, string Message)> CreateEmployeeAsync(CreateEmployeeDto request);
 }
