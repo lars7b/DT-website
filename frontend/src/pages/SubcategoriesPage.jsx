@@ -74,9 +74,9 @@ export default function SubcategoriesPage() {
             {subcategories.map((subcategory) => (
               <div
                 key={subcategory.id}
-                className="category-card relative h-56 bg-white rounded-lg overflow-hidden border border-gray-200 group cursor-pointer flex items-center justify-center"
+                className="category-card relative h-56 bg-white rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center"
               >
-                <div className="category-overlay absolute inset-0 bg-gray-100 opacity-70 group-hover:opacity-50 transition"></div>
+                <div className="category-overlay absolute inset-0 bg-gray-100 opacity-70 hover:opacity-50 transition"></div>
 
                 <div className="category-content relative z-10 text-center px-6">
                   <h2 className="category-name text-gray-900 text-xl font-bold tracking-wide">

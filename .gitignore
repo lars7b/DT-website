@@ -38,3 +38,9 @@ backend/appsettings.Development.json
 # =========================
 # Ignore local environment variables for Docker
 .env
+
+# =========================
+# Claude AI Settings
+# =========================
+# Ignore local Claude settings (contains personal paths and passwords)
+.claude/settings.json
