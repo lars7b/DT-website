@@ -32,4 +32,10 @@
   <ItemGroup>
     <ProjectReference Include="..\backend\Backend.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\database\**\*.sql">
+      <Link>database\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
@@ -16,7 +16,8 @@ namespace Backend.Tests.IntegrationTests;
 public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     protected virtual bool UseFakeAuth => false;
-    private  readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
+    protected virtual bool? UseFakeAdmin => false;
+    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:15-alpine")
         .WithDatabase("test_db")
         .WithUsername("postgres")
@@ -35,15 +36,35 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         );
         Environment.SetEnvironmentVariable("JwtSettings__Issuer", "TestIssuer");
         Environment.SetEnvironmentVariable("JwtSettings__Audience", "TestAudience");
-        _dbContainer.StartAsync().GetAwaiter().GetResult();
-    _redisContainer.StartAsync().GetAwaiter().GetResult();
     }
 
     public async ValueTask InitializeAsync()
     {
         await _dbContainer.StartAsync();
         await _redisContainer.StartAsync();
+        await WaitForDatabaseAsync();
         await InitializeDatabaseAsync();
+    }
+
+    private async Task WaitForDatabaseAsync()
+    {
+        var connString = _dbContainer.GetConnectionString();
+
+        for (int i = 0; i < 10; i++)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+                return;
+            }
+            catch
+            {
+                await Task.Delay(500);
+            }
+        }
+
+        throw new Exception("Database not ready");
     }
 
     private async Task InitializeDatabaseAsync()
@@ -52,15 +73,23 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
-        string sql_scripts = await File.ReadAllTextAsync("..\\..\\..\\..\\database\\01-schema.sql");
-        // var sql = await File.ReadAllTextAsync("01-schema.sql");
+        var basePath = Path.Combine(AppContext.BaseDirectory, "database");
 
-        // Voer het script uit
+        var schemaPath = Path.Combine(basePath, "01-schema.sql");
+        var seedPath = Path.Combine(basePath, "02-data.sql");
+        
+        if (!File.Exists(schemaPath))
+            throw new FileNotFoundException("Schema file not found", schemaPath);
+
+        if (!File.Exists(seedPath))
+            throw new FileNotFoundException("Seed file not found", seedPath);
+
+        string sql_scripts = await File.ReadAllTextAsync(schemaPath);
+        string seed_scripts = await File.ReadAllTextAsync(seedPath);
+
+        // Voer het scripts uit
         await using var command = new NpgsqlCommand(sql_scripts, connection);
         await command.ExecuteNonQueryAsync();
-
-        //seed data
-        string seed_scripts = await File.ReadAllTextAsync("..\\..\\..\\..\\database\\02-data.sql");
 
         await using var second_command = new NpgsqlCommand(seed_scripts, connection);
         await second_command.ExecuteNonQueryAsync();
@@ -103,6 +132,7 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     public new async ValueTask DisposeAsync()
     {
         await _dbContainer.DisposeAsync();
+        await _redisContainer.DisposeAsync();
     }
 }
 
@@ -111,8 +141,13 @@ public class AuthenticatedApiFactory : CustomApiFactory
     protected override bool UseFakeAuth => true;
 }
 
-
 public class UnauthenticatedApiFactory : CustomApiFactory
 {
     protected override bool UseFakeAuth => false;
+}
+
+public class AdminApiFactory : CustomApiFactory
+{
+    protected override bool UseFakeAuth => true;
+    protected override bool? UseFakeAdmin => true;
 }
