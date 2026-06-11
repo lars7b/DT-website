@@ -1,7 +1,6 @@
 using Backend.Repositories;
 using Backend.Services;
 
-var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 using System.Text;
@@ -15,6 +14,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.HttpOverrides;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
