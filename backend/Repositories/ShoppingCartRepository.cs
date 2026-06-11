@@ -11,8 +11,6 @@ using Npgsql;
 /// </summary>
 public class ShoppingCartRepository : IShoppingCartRepository
 {
-    //https://dappertutorial.net/dapper-transaction-third-party-library
-    // https://www.conradakunga.com/blog/dapper-part-10-handling-cancellations/
     private readonly string _connectionString;
 
     public ShoppingCartRepository(IConfiguration configuration)
@@ -34,7 +32,6 @@ public class ShoppingCartRepository : IShoppingCartRepository
             JOIN customers AS c ON sc.customer_id = c.id
             WHERE c.user_id = @userId 
             LIMIT 1;",
-            // "SELECT * FROM get_all_items_from_cart;",
             new { userId },transaction
         );
         return cart;

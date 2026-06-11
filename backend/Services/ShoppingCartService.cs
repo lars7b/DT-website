@@ -5,9 +5,6 @@ using Backend.DTOs;
 using Backend.Models;
 using Backend.Repositories;
 using StackExchange.Redis;
-using Backend.DTOs;
-using Backend.Models;
-using Backend.Repositories;
 
 public sealed class ShoppingCartService : IShoppingCartService
 {

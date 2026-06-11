@@ -1,0 +1,70 @@
+' steps
+' User is logged in (JWT authentication).
+' User adds products to the shopping cart.
+' User chooses to place an order.
+' System checks whether the user is authenticated.
+' CreateOrder() is called.
+' OrderService.CreateOrderAsync() calls OrderRepository.CreateOrder().
+' A database transaction starts.
+' A new order is created with status Pending.
+' Cart items are copied to order_items.
+' Shopping cart items are removed.
+' An entry is added to order_status_history.
+' Transaction commits.
+' User receives success response.
+' User can optionally create a payment afterwards.
+' User can later view, cancel, or track the order.
+
+
+@startuml
+
+start
+
+:User is authenticated;
+
+:View shopping cart;
+
+:Add products to cart;
+
+:Submit order;
+
+:Start database transaction;
+
+:Create order
+(Status = Pending);
+
+if (Order created?) then (Yes)
+
+    :Copy cart items
+    to order_items;
+
+    if (Items copied?) then (Yes)
+
+        :Delete cart items;
+
+        :Insert order status history;
+
+        :Commit transaction;
+
+        :Return success;
+
+        :Optional:
+        Create payment;
+
+    else (No)
+
+        :Rollback transaction;
+        :Return error;
+
+    endif
+
+else (No)
+
+    :Rollback transaction;
+    :Return error;
+
+endif
+
+stop
+
+@enduml
