@@ -94,7 +94,7 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ""customer_id"" INT NOT NULL,
                 ""product_id"" INT NOT NULL,
                 ""rating"" INT NOT NULL,
-                ""comment"" TEXT,
+                ""comment"" VARCHAR(100),
                 ""review_date"" DATE DEFAULT CURRENT_DATE,
                 CONSTRAINT ""fk_reviews_customer""
                     FOREIGN KEY (""customer_id"")
