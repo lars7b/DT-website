@@ -98,7 +98,7 @@ public class ReviewsControllerTests : IntegrationTestBase
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue("UserId", userId);
 
-        return (int)await command.ExecuteScalarAsync()!;
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
     }
 
     private async Task<int> SeedProductAsync(string name, decimal price)
@@ -116,7 +116,7 @@ public class ReviewsControllerTests : IntegrationTestBase
         command.Parameters.AddWithValue("Name", name);
         command.Parameters.AddWithValue("Price", price);
 
-        return (int)await command.ExecuteScalarAsync()!;
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
     }
 
     private async Task<int> SeedReviewAsync(int customerId, int productId, int rating, string comment)
