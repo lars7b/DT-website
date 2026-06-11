@@ -218,6 +218,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
         var factory = new AdminApiFactory();
         await factory.InitializeAsync();
         var client = factory.CreateClient();
+        
         var response = await client.DeleteAsync("/api/order/1");
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }

@@ -32,6 +32,13 @@ public class AuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 
 public class AdminAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
+    public AdminAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder
+    )
+        : base(options, logger, encoder) { }
+
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var claims = new[]

@@ -38,7 +38,8 @@ public class ShoppingCartRepository : IShoppingCartRepository
             JOIN customers AS c ON sc.customer_id = c.id
             WHERE c.user_id = @userId 
             LIMIT 1;",
-            new { userId },transaction
+            new { userId },
+            transaction
         );
         return cart;
     }
@@ -115,9 +116,9 @@ public class ShoppingCartRepository : IShoppingCartRepository
     {
         string query =
             @"INSERT INTO shopping_carts (customer_id)
-            Select id from customers 
-            where user_id = @User_id
-            RETURNING id;";
+            SELECT id FROM customers 
+            WHERE user_id = @User_id
+            RETURNING id";
         if (con == null)
         {
             con = new NpgsqlConnection(_connectionString);
@@ -125,7 +126,22 @@ public class ShoppingCartRepository : IShoppingCartRepository
         long result = await con.QuerySingleAsync<long>(query, new { user_id }, transaction);
         return result;
     }
-
+    private async Task<bool> ProductExistsAsync(
+        long productId,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction)
+    {
+        return await connection.ExecuteScalarAsync<bool>(
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM products
+                WHERE id = @productId
+            );
+            """,
+            new { productId },
+            transaction);
+    }
     private async Task<CartItem?> GetCartItemByProductIdAsync(
         long cartId,
         long productId,
@@ -173,6 +189,11 @@ public class ShoppingCartRepository : IShoppingCartRepository
             }
 
             item.CartId = cartId;
+            if (!await ProductExistsAsync(item.ProductId, connection, transaction))
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
 
             CartItem? existingItem = await GetCartItemByProductIdAsync(
                 cartId,

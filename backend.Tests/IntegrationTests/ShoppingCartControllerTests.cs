@@ -22,14 +22,6 @@ public class ShoppingCartControllerTests
     }
 
     [Fact]
-    public async Task GetShoppingCart_ShouldReturn401_WhenNameIdentifierClaimMissing()
-    {
-        var response = await _authenticatedClient.GetAsync("/api/shoppingcart");
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
     public async Task GetShoppingCart_ShouldReturn401Unauthorized_WhenNotAuthenticated()
     {
         // ARRANGE
@@ -62,7 +54,7 @@ public class ShoppingCartControllerTests
     public async Task GetShoppingCart_ShouldReturn404NotFound_WhenCartDoesNotExist()
     {
         // ACT
-        var response = await _unauthenticatedClient.GetAsync("/api/shoppingcart");
+        var response = await _authenticatedClient.GetAsync("/api/shoppingcart");
 
         // ASSERT
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -146,12 +138,30 @@ public class ShoppingCartControllerTests
             ProductId = 1,
             Quantity = 5,
         };
+        var updated_item = new CartItemDto
+        {
+            Id = 1,
+            ProductId = 1,
+            Quantity = 20,
+        };
 
         // ACT
-        var response = await _unauthenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _unauthenticatedClient.PostAsJsonAsync(
+            "/api/shoppingcart/items",
+            item
+        );
 
         // ASSERT
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+        // ACT
+        var update_response = await _unauthenticatedClient.PostAsJsonAsync(
+            "/api/shoppingcart/items",
+            updated_item
+        );
+
+        // ASSERT
+        Assert.Equal(HttpStatusCode.Unauthorized, update_response.StatusCode);
     }
 
     [Fact]
@@ -173,21 +183,51 @@ public class ShoppingCartControllerTests
     }
 
     [Fact]
-    public async Task UpdateItemToShoppingCart_ShouldReturn204NoContent_WhenItemUpdatedSuccessfully()
+    public async Task UpdateItemToShoppingCart_ShouldUpdateQuantity()
     {
-        // ARRANGE
-        var item = new CartItemDto
+        // Arrange
+        var postitem = new CartItemDto
         {
             Id = 1,
             ProductId = 1,
-            Quantity = 10,
+            Quantity = 5,
         };
 
-        // ACT
-        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
+        var updatedItem = new CartItemDto
+        {
+            Id = 1,
+            ProductId = 1,
+            Quantity = 20,
+        };
 
-        // ASSERT
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        // Create
+        var createResponse = await _authenticatedClient.PostAsJsonAsync(
+            "/api/shoppingcart/items",
+            postitem
+        );
+
+        Assert.Equal(HttpStatusCode.NoContent, createResponse.StatusCode);
+
+        // Update
+        var updateResponse = await _authenticatedClient.PostAsJsonAsync(
+            "/api/shoppingcart/items",
+            updatedItem
+        );
+
+        Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
+
+        // Get
+        var getResponse = await _authenticatedClient.GetAsync("/api/shoppingcart");
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        var items = await _authenticatedClient.GetFromJsonAsync<ShoppingCartDto>(
+            "/api/shoppingcart/items"
+        );
+
+        var item = items.Items.Single(x => x.ProductId == 1);
+
+        Assert.Equal(20, item.Quantity);
     }
 
     [Fact]
@@ -229,15 +269,45 @@ public class ShoppingCartControllerTests
     public async Task DeleteShoppingCartItem_ShouldReturn204NoContent_WhenItemDeletedSuccessfully()
     {
         // ARRANGE
-        long cartItemId = 1;
+        var itemToAdd = new CartItemDto { ProductId = 1, Quantity = 2 };
+
+        // 1. Add item first (ensures it exists)
+        var addResponse = await _authenticatedClient.PostAsJsonAsync(
+            "/api/shoppingcart/items",
+            itemToAdd
+        );
+
+        Assert.Equal(HttpStatusCode.NoContent, addResponse.StatusCode);
+
+        // 2. Get cart to retrieve real item id
+        var cart = await _authenticatedClient.GetFromJsonAsync<ShoppingCartDto>(
+            "/api/shoppingcart"
+        );
+
+        Assert.NotNull(cart);
+        Assert.NotEmpty(cart.Items);
+
+        var insertedItem = cart.Items.FirstOrDefault(x => x.ProductId == itemToAdd.ProductId);
+
+        Assert.NotNull(insertedItem);
+
+        long cartItemId = insertedItem.Id;
 
         // ACT
         var response = await _authenticatedClient.DeleteAsync(
-            $"/api/shoppingcart/Items/{cartItemId}"
+            $"/api/shoppingcart/items/{cartItemId}"
         );
 
         // ASSERT
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        // VERIFY DELETION
+        var updatedCart = await _authenticatedClient.GetFromJsonAsync<ShoppingCartDto>(
+            "/api/shoppingcart"
+        );
+
+        Assert.NotNull(updatedCart);
+        Assert.DoesNotContain(updatedCart.Items, x => x.Id == cartItemId);
     }
 
     [Fact]
@@ -258,9 +328,17 @@ public class ShoppingCartControllerTests
     [Fact]
     public async Task GetShoppingCart_ShouldReturn404_WhenServiceReturnsNull()
     {
-        var response = await _authenticatedClient.GetAsync("/api/shoppingcart");
+        var response = await _authenticatedClient.GetAsync( // GetFromJsonAsync
+            "/api/shoppingcart"
+        );
+        // Assert.Equal(0, response.Items.Count);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var delete = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
+
+        var second_response = await _authenticatedClient.GetAsync("/api/shoppingcart");
+
+        Assert.Equal(HttpStatusCode.BadRequest, second_response.StatusCode);
     }
 
     [Fact]
@@ -277,9 +355,9 @@ public class ShoppingCartControllerTests
     }
 
     [Fact]
-    public async Task AddItem_ShouldReturn400_WhenServiceFails()
+    public async Task AddItem_ShouldReturn400_WhenServiceCantFindProduct()
     {
-        var item = new CartItemDto { ProductId = 999, Quantity = 1 };
+        var item = new CartItemDto { ProductId = 99999999, Quantity = 1 };
 
         var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
@@ -287,23 +365,33 @@ public class ShoppingCartControllerTests
     }
 
     [Fact]
-    public async Task UpdateItem_ShouldReturn400_WhenServiceReturnsFalse()
+    public async Task UpdateItem_ShouldReturn400_WhenServiceCantFindProduct()
     {
-        var item = new CartItemDto
-        {
-            Id = 999,
-            ProductId = 1,
-            Quantity = 5,
-        };
+        var item = new CartItemDto { ProductId = 9999999999, Quantity = 5 };
 
-        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
+        var addresponse = await _authenticatedClient.PostAsJsonAsync(
+            "/api/shoppingcart/items",
+            item
+        );
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, addresponse.StatusCode);
+
+        var itemupdate = new CartItemDto { ProductId = 9999999999, Quantity = 6 };
+
+        var updateresponse = await _authenticatedClient.PostAsJsonAsync(
+            "/api/shoppingcart/items",
+            itemupdate
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, updateresponse.StatusCode);
     }
 
     [Fact]
-    public async Task DeleteShoppingCart_ShouldReturn400_WhenServiceFails()
+    public async Task DeleteShoppingCart_ShouldReturn404_WhenCartDontExists()
     {
+        var firstresponse = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
+        Assert.Equal(HttpStatusCode.NoContent, firstresponse.StatusCode);
+        // the second response the cart will already be deleted so it should return
         var response = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

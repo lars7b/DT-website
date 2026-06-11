@@ -88,7 +88,7 @@ public sealed class ShoppingCartService : IShoppingCartService
 
     public async Task<bool> AddItemsAsync(long userid, CartItemDto items)
     {
-        if (items.Quantity < 1)
+        if (items.Quantity < 1||items.ProductId<1)
         {
             return false;
         }
