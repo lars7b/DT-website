@@ -36,7 +36,7 @@ public class OrderRepository : IOrderRepository
                     o.customer_id AS customerid,
                     o.order_date AS orderdate,
                     o.status
-                FROM orders AS o
+                FROM orders AS o 
                 JOIN order_items AS items ON items.order_id = o.id 
                 WHERE o.id = @id;
                 """;
@@ -51,8 +51,8 @@ public class OrderRepository : IOrderRepository
                 o.customer_id AS customerid ,
                 o.order_date AS orderdate,
                 o.status
-                FROM orders AS o
-                JOIN order_items AS items ON items.order_id = o.id 
+                FROM orders AS o 
+                JOIN order_items AS items ON items.order_id = o.id  
                 JOIN customers ON customers.id = o.customer_id 
                 WHERE 
                     o.id = @id AND 
@@ -83,8 +83,8 @@ public class OrderRepository : IOrderRepository
         OrderItem? order = await _connection.QueryFirstOrDefaultAsync<OrderItem>(
             """
             SELECT items.id, items.order_id AS orderid, items.product_id AS productid, items.quantity, items.price
-            FROM order_items AS items
-            JOIN orders AS o ON items.order_id = o.id 
+            FROM order_items AS items 
+            JOIN orders AS o ON items.order_id = o.id  
             JOIN customers ON customers.id = o.customer_id 
             WHERE o.id = @id AND (
                 customers.user_id = @userId
@@ -116,19 +116,20 @@ public class OrderRepository : IOrderRepository
                 items.quantity,
                 items.price
 
-            FROM orders AS o
-            INNER JOIN order_items items
-                ON o.id = items.order_id
+            FROM orders AS o 
+            INNER JOIN order_items AS items  
+                ON o.id = items.order_id   
+                     
             """;
 
         if (userId != null)
         {
-            sql += """
-                JOIN customers AS c
-                    ON c.id = o.customer_id
-                JOIN users AS u
-                    ON u.id = c.user_id
-                WHERE
+            sql += """     
+                INNER JOIN customers AS c  
+                     ON c.id = o.customer_id
+                INNER JOIN users AS u  
+                    ON u.id = c.user_id  
+                WHERE  
                     c.user_id = @userId
                     OR EXISTS (
                         SELECT 1
@@ -175,7 +176,7 @@ public class OrderRepository : IOrderRepository
                 """
                 INSERT INTO orders (customer_id, order_date, status)
                 SELECT c.id, NOW(), 'Pending'
-                FROM customers c
+                FROM customers c  
                 JOIN users u ON u.id = c.user_id
                 WHERE u.id = @userId
                 RETURNING id;
@@ -191,11 +192,11 @@ public class OrderRepository : IOrderRepository
                     ci.product_id,
                     ci.quantity,
                     p.price
-                FROM cart_items ci
-                JOIN shopping_carts AS sc ON sc.id = ci.cart_id
-                JOIN products AS p ON p.id = ci.product_id
-                JOIN customers AS c ON sc.customer_id = c.id
-                JOIN users AS u ON u.id = c.user_id
+                FROM cart_items ci  
+                JOIN shopping_carts AS sc ON sc.id = ci.cart_id 
+                JOIN products AS p ON p.id = ci.product_id 
+                JOIN customers AS c ON sc.customer_id = c.id 
+                JOIN users AS u ON u.id = c.user_id 
                 WHERE u.id = @userId;
                 """,
                 new { orderId, userId },
@@ -205,8 +206,8 @@ public class OrderRepository : IOrderRepository
                 """
                 DELETE FROM cart_items
                 WHERE cart_id IN (
-                    SELECT sc.id FROM shopping_carts AS sc
-                    JOIN customers AS c ON sc.customer_id = c.id
+                    SELECT sc.id FROM shopping_carts AS sc  
+                    JOIN customers AS c ON sc.customer_id = c.id  
                     JOIN users AS u ON u.id = c.user_id   
                     WHERE u.id = @userId
                 );
@@ -251,9 +252,12 @@ public class OrderRepository : IOrderRepository
         try
         {
             string query = """
-                UPDATE orders SET status = @Status 
-                JOIN payments AS p ON p.order_id = orders.id
-                WHERE id = @Id AND (p.status = 'Paid' OR p.status = 'Completed');
+                UPDATE orders
+                SET status = @Status
+                FROM payments p
+                WHERE p.order_id = orders.id
+                AND orders.id = @Id
+                AND (p.status = 'Paid' OR p.status = 'Completed');
                 """;
             int result = await _connection.ExecuteAsync(
                 query,

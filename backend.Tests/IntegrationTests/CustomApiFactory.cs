@@ -16,7 +16,7 @@ namespace Backend.Tests.IntegrationTests;
 public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     protected virtual bool UseFakeAuth => false;
-    protected virtual bool? UseFakeAdmin => false;
+    protected virtual bool UseFakeAdmin => false;
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:15-alpine")
         .WithDatabase("test_db")
@@ -77,22 +77,54 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
         var schemaPath = Path.Combine(basePath, "01-schema.sql");
         var seedPath = Path.Combine(basePath, "02-data.sql");
-        
+        var testseedPath = Path.GetFullPath(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "backend.Tests",
+                "testdata.sql"
+            )
+        );
+
         if (!File.Exists(schemaPath))
             throw new FileNotFoundException("Schema file not found", schemaPath);
 
         if (!File.Exists(seedPath))
             throw new FileNotFoundException("Seed file not found", seedPath);
 
+        if (!File.Exists(testseedPath))
+            throw new FileNotFoundException("Schema file not found", testseedPath);
+
         string sql_scripts = await File.ReadAllTextAsync(schemaPath);
         string seed_scripts = await File.ReadAllTextAsync(seedPath);
+        string test_scripts = await File.ReadAllTextAsync(testseedPath);
 
         // Voer het scripts uit
         await using var command = new NpgsqlCommand(sql_scripts, connection);
         await command.ExecuteNonQueryAsync();
 
+        var truncate = """
+            TRUNCATE TABLE
+            order_status_history,
+            order_items,
+            orders,
+            cart_items,
+            shopping_carts,
+            customers
+            RESTART IDENTITY CASCADE;
+            """;
+
+        await using var middle_command = new NpgsqlCommand(truncate, connection);
+        await middle_command.ExecuteNonQueryAsync();
+
         await using var second_command = new NpgsqlCommand(seed_scripts, connection);
         await second_command.ExecuteNonQueryAsync();
+
+        await using var third_command = new NpgsqlCommand(test_scripts, connection);
+        await third_command.ExecuteNonQueryAsync();
     }
 
     // Overschrijf de config, pak de connectionstring van test_db
@@ -114,7 +146,7 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             }
         );
 
-        if (UseFakeAuth)
+        if (UseFakeAuth && !UseFakeAdmin)
         {
             builder.ConfigureTestServices(services =>
             {
@@ -125,6 +157,19 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                         options.DefaultChallengeScheme = "Test";
                     })
                     .AddScheme<AuthenticationSchemeOptions, AuthHandler>("Test", _ => { });
+            });
+        }
+        if (UseFakeAuth && UseFakeAdmin)
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services
+                    .AddAuthentication(options =>
+                    {
+                        options.DefaultAuthenticateScheme = "Test";
+                        options.DefaultChallengeScheme = "Test";
+                    })
+                    .AddScheme<AuthenticationSchemeOptions, AdminAuthHandler>("Test", _ => { });
             });
         }
     }
@@ -149,5 +194,5 @@ public class UnauthenticatedApiFactory : CustomApiFactory
 public class AdminApiFactory : CustomApiFactory
 {
     protected override bool UseFakeAuth => true;
-    protected override bool? UseFakeAdmin => true;
+    protected override bool UseFakeAdmin => true;
 }

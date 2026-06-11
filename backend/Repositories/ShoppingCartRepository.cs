@@ -30,11 +30,10 @@ public class ShoppingCartRepository : IShoppingCartRepository
             connection = new NpgsqlConnection(_connectionString);
         }
         ShoppingCart? cart = await connection.QueryFirstOrDefaultAsync<ShoppingCart>(
-            @"SELECT sc.* FROM shopping_carts AS sc
+            @"SELECT sc.* FROM shopping_carts AS sc  
             JOIN customers AS c ON sc.customer_id = c.id
             WHERE c.user_id = @userId 
             LIMIT 1;",
-            // "SELECT * FROM get_all_items_from_cart;",
             new { userId },transaction
         );
         return cart;
@@ -49,8 +48,8 @@ public class ShoppingCartRepository : IShoppingCartRepository
         IEnumerable<CartItem> items = await connection.QueryAsync<CartItem>(
             """
             SELECT items.id,items.cart_id AS cartid,items.product_id AS productid,items.quantity
-            FROM cart_items AS items
-            JOIN shopping_carts AS carts ON items.cart_id = carts.id 
+            FROM cart_items AS items  
+            JOIN shopping_carts AS carts ON items.cart_id = carts.id  
             JOIN customers ON customers.id = carts.customer_id 
             WHERE customers.user_id = @userId;
             """,
@@ -208,8 +207,8 @@ public class ShoppingCartRepository : IShoppingCartRepository
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = """
             DELETE FROM cart_items AS ci 
-            USING shopping_carts AS sc
-            JOIN customers AS c ON sc.customer_id = c.id
+            USING shopping_carts AS sc  
+            JOIN customers AS c ON sc.customer_id = c.id  
             JOIN users AS u ON c.user_id=u.id
             WHERE sc.id = ci.cart_id  AND ci.id = @Id AND (u.id =@Userid OR u.role = 'Admin');
             """;

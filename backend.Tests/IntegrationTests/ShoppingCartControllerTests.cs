@@ -5,22 +5,25 @@ using Xunit;
 
 namespace Backend.Tests.IntegrationTests;
 
-public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
+public class ShoppingCartControllerTests
+    : IClassFixture<AuthenticatedApiFactory>,
+        IClassFixture<UnauthenticatedApiFactory>
 {
     private readonly HttpClient _authenticatedClient;
     private readonly HttpClient _unauthenticatedClient;
 
-    public ShoppingCartControllerTests()
+    public ShoppingCartControllerTests(
+        AuthenticatedApiFactory auth,
+        UnauthenticatedApiFactory unauth
+    )
     {
-        _authenticatedClient = new AuthenticatedApiFactory().CreateClient();
-
-        _unauthenticatedClient = new UnauthenticatedApiFactory().CreateClient();
+        _authenticatedClient = auth.CreateClient();
+        _unauthenticatedClient = unauth.CreateClient();
     }
 
     [Fact]
     public async Task GetShoppingCart_ShouldReturn401_WhenNameIdentifierClaimMissing()
     {
-
         var response = await _authenticatedClient.GetAsync("/api/shoppingcart");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -145,7 +148,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _unauthenticatedClient.PutAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _unauthenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -163,7 +166,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _authenticatedClient.PutAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -181,7 +184,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         };
 
         // ACT
-        var response = await _authenticatedClient.PutAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -293,7 +296,7 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
             Quantity = 5,
         };
 
-        var response = await _authenticatedClient.PutAsJsonAsync("/api/shoppingcart/items", item);
+        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -304,17 +307,5 @@ public class ShoppingCartControllerTests : IClassFixture<CustomApiFactory>
         var response = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task PostItem_ShouldAlwaysRequireAuth()
-    {
-
-        var response = await _authenticatedClient.PostAsJsonAsync(
-            "http://localhost/api/shoppingcart/items",
-            new CartItemDto { ProductId = 1, Quantity = 1 }
-        );
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

@@ -105,7 +105,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
         var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/order/99999");
+        var response = await client.GetAsync("/api/order/9999999");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -130,6 +130,13 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
         var client = factory.CreateClient();
+        var item = new CartItemDto
+        {
+            Id = 999,
+            ProductId = 1,
+            Quantity = 5,
+        };
+        var itemrequest = await client.PostAsJsonAsync("/api/cart/items", item);
         var response = await client.PostAsync("/api/order", null);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -141,6 +148,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
         var client = factory.CreateClient();
+        var delete_response = await client.DeleteAsync("api/shoppingcart");
         var response = await client.PostAsync("/api/order", null);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -199,7 +207,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
         var client = factory.CreateClient();
-        var response = await client.PutAsync("/api/order/99999/cancel", null);
+        var response = await client.PutAsync("/api/order/9999999/cancel", null);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

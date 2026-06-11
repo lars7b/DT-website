@@ -31,10 +31,10 @@ public class PaymentRepository : IPaymentRepository
                 p.payment_method,
                 p.order_id,
                 p.status
-            FROM payments AS p
-            JOIN orders AS o ON p.order_id = o.id 
-            JOIN customers AS c ON c.id=o.customer_id 
-            JOIN users AS u ON u.id=c.user_id
+            FROM payments AS p  
+            JOIN orders AS o ON p.order_id = o.id  
+            JOIN customers AS c ON c.id=o.customer_id  
+            JOIN users AS u ON u.id=c.user_id 
             WHERE
                 c.user_id = @userId
                 OR EXISTS (
@@ -63,8 +63,8 @@ public class PaymentRepository : IPaymentRepository
         Payment? payment = await connection.QueryFirstOrDefaultAsync<Payment>(
             """
             SELECT p.*
-            FROM payments p
-            JOIN orders o ON p.order_id = o.id
+            FROM payments p 
+            JOIN orders o ON p.order_id = o.id 
             JOIN customers c ON o.customer_id = c.id
             WHERE p.id = @id AND (
                 c.user_id = @userId
@@ -97,7 +97,7 @@ public class PaymentRepository : IPaymentRepository
                 SELECT @Amount, Current_timestamp(), @PaymentMethod, @OrderId, @Status
                 WHERE EXISTS (
                     SELECT 1
-                    FROM orders o
+                    FROM orders o 
                     JOIN customers c ON o.customer_id = c.id
                     WHERE o.id = @OrderId AND (
                         c.user_id = @userId
@@ -148,8 +148,8 @@ public class PaymentRepository : IPaymentRepository
                 p.payment_method,
                 p.order_id,
                 p.status
-            FROM payments AS p 
-            JOIN orders AS o ON p.order_id = o.id 
+            FROM payments AS p  
+            JOIN orders AS o ON p.order_id = o.id  
             JOIN customers AS c ON c.id=o.customer_id 
             WHERE c.id=@userId;
             """;

@@ -143,10 +143,3 @@ CREATE TABLE IF NOT EXISTS "favorites" (
 	CONSTRAINT "uq_favorites_customer_product" UNIQUE ("customer_id", "product_id")
 );
 
-
--- CREATE VIEW "get_all_items_from_cart" AS 
--- 	SELECT "items"."id", "items"."cart_id" AS "cartid"
--- 		FROM "cart_items" AS "items"
--- 		JOIN "shopping_carts" AS "carts" ON "items"."cart_id" = "carts"."id";
--- 		JOIN "customers" ON "customers"."id" = "carts"."customer_id"
--- 		JOIN "users" ON "users"."id" = "customers"."user_id";
