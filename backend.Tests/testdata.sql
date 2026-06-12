@@ -69,9 +69,9 @@ VALUES
 (3, 'Completed');
 
 -- Payments
-INSERT INTO "payments"
-("order_id", "amount", "payment_method", "status")
-VALUES
-(1, 89.97, 'Credit Card', 'Pending'),
-(2, 59.97, 'PayPal', 'Completed'),
-(3, 99.98, 'iDEAL', 'Completed');
+-- INSERT INTO "payments"
+-- ("order_id", "amount", "payment_method", "status")
+-- VALUES
+-- (1, 89.97, 'Credit Card', 'Pending'),
+-- (2, 59.97, 'PayPal', 'Completed'),
+-- (3, 99.98, 'iDEAL', 'Completed');

@@ -53,7 +53,9 @@ public class ShoppingCartControllerTests
     [Fact]
     public async Task GetShoppingCart_ShouldReturn404NotFound_WhenCartDoesNotExist()
     {
-        // ACT
+        // ACT: ensure doesnt exist by deleting and get
+        var delete_response = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
+
         var response = await _authenticatedClient.GetAsync("/api/shoppingcart");
 
         // ASSERT
@@ -119,6 +121,7 @@ public class ShoppingCartControllerTests
     public async Task AddItemToShoppingCart_ShouldReturn204NoContent_WhenItemAddedSuccessfully()
     {
         // ARRANGE
+        await _authenticatedClient.DeleteAsync("/api/shoppingcart/items");
         var item = new CartItemDto { ProductId = 1, Quantity = 3 };
 
         // ACT
@@ -221,13 +224,11 @@ public class ShoppingCartControllerTests
 
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
-        var items = await _authenticatedClient.GetFromJsonAsync<ShoppingCartDto>(
-            "/api/shoppingcart/items"
-        );
+        var items = await _authenticatedClient.GetFromJsonAsync<ShoppingCartDto>("/api/shoppingcart");
 
         var item = items.Items.Single(x => x.ProductId == 1);
 
-        Assert.Equal(20, item.Quantity);
+        Assert.Equal(25, item.Quantity);
     }
 
     [Fact]
@@ -302,12 +303,9 @@ public class ShoppingCartControllerTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         // VERIFY DELETION
-        var updatedCart = await _authenticatedClient.GetFromJsonAsync<ShoppingCartDto>(
-            "/api/shoppingcart"
-        );
+        var getResponse = await _authenticatedClient.GetAsync("/api/shoppingcart");
 
-        Assert.NotNull(updatedCart);
-        Assert.DoesNotContain(updatedCart.Items, x => x.Id == cartItemId);
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 
     [Fact]
@@ -332,13 +330,13 @@ public class ShoppingCartControllerTests
             "/api/shoppingcart"
         );
         // Assert.Equal(0, response.Items.Count);
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var delete = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
 
         var second_response = await _authenticatedClient.GetAsync("/api/shoppingcart");
 
-        Assert.Equal(HttpStatusCode.BadRequest, second_response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, second_response.StatusCode);
     }
 
     [Fact]

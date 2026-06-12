@@ -22,7 +22,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
             ?? throw new InvalidOperationException("DB Connection missing");
     }
 
-    public async Task<ShoppingCart?> GetCartByCustomerIdAsync(
+    public async Task<ShoppingCart?> GetCartByUserIdAsync(
         long userId,
         NpgsqlConnection? connection = null,
         NpgsqlTransaction? transaction = null,
@@ -117,7 +117,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
         string query =
             @"INSERT INTO shopping_carts (customer_id)
             SELECT id FROM customers 
-            WHERE user_id = @User_id
+            WHERE user_id = @user_id
             RETURNING id";
         if (con == null)
         {
@@ -175,7 +175,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
 
         try
         {
-            ShoppingCart? cart = await GetCartByCustomerIdAsync(userId, connection, transaction);
+            ShoppingCart? cart = await GetCartByUserIdAsync(userId, connection, transaction);
 
             long cartId;
 
