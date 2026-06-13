@@ -13,5 +13,5 @@ public sealed class OrderStatusHistory
     /// <summary>
     /// Date and time status got changed
     /// </summary>
-    public DateTime Date {get;set;}
+    public DateTime StatusDate {get;set;}
 }
