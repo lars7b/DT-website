@@ -34,7 +34,7 @@ public class AuthService : IAuthService
         var createdCustomer = await _userRepository.CreateUserWithCustomerAsync(newUser, request.FirstName, request.LastName);
         if (createdCustomer == null)
         {
-            return (false, "Registration failed.");
+            return (false, "E-mailadres is al in gebruik.");
         }
         return (true, "Registration successful.");
     }

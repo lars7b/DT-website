@@ -1,0 +1,77 @@
+@startuml C4_Component_Backend
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram — Backend API (ASP.NET Core 9)
+
+Container_Ext(frontend, "Frontend", "React 19 SPA", "Stuurt HTTP-verzoeken\nnaar de API.")
+ContainerDb_Ext(database, "Database", "PostgreSQL 18", "Persistente opslag.")
+
+Container_Boundary(backend, "Backend API") {
+
+    ' --- Controllers ---
+    Component(authCtrl, "AuthController", "ASP.NET Controller", "Registratie, inloggen,\nwachtwoord- en e-mailwijziging.")
+    Component(productCtrl, "ProductsController", "ASP.NET Controller", "Productoverzicht met\nzoek- en categoriefilters.")
+    Component(categoryCtrl, "CategoriesController", "ASP.NET Controller", "Opvragen van alle\ncategorieën en subcategorieën.")
+    Component(favoriteCtrl, "FavoritesController", "ASP.NET Controller", "Toevoegen, verwijderen\nen ophalen van favorieten.")
+    Component(customerCtrl, "CustomerController", "ASP.NET Controller", "Klantprofiel beheren\nen account verwijderen.")
+    Component(orderCtrl, "OrdersController", "ASP.NET Controller", "Bestelhistorie\nper klant opvragen.")
+    Component(employeeCtrl, "EmployeeController", "ASP.NET Controller", "Medewerkersprofiel.\nAlleen Employee/Admin rol.")
+
+    ' --- Services ---
+    Component(authSvc, "AuthService", "C# Service", "JWT genereren,\nArgon2 wachtwoord-hashing,\ngebruikersbeheer.")
+    Component(productSvc, "ProductService", "C# Service", "Productlogica\nen filteroperaties.")
+    Component(categorySvc, "CategoryService", "C# Service", "Categorie- en\nsubcategorielogica.")
+    Component(favoriteSvc, "FavoriteService", "C# Service", "Favorietenbeheer,\nduplicaten voorkomen.")
+    Component(customerSvc, "CustomerService", "C# Service", "Klantprofiel\nen accountlogica.")
+    Component(orderSvc, "OrderHistoryService", "C# Service", "Bestelhistorie\nen orderregels ophalen.")
+    Component(employeeSvc, "EmployeeService", "C# Service", "Medewerkerslogica\nen profielbeheer.")
+
+    ' --- Repositories ---
+    Component(authRepo, "UserRepository", "Dapper Repository", "SQL-queries voor\ngebruikerstabel.")
+    Component(productRepo, "ProductRepository", "Dapper Repository", "SQL-queries voor\nproducten.")
+    Component(categoryRepo, "CategoryRepository", "Dapper Repository", "SQL-queries voor\ncategorieën.")
+    Component(favoriteRepo, "FavoriteRepository", "Dapper Repository", "SQL-queries voor\nfavorieten.")
+    Component(customerRepo, "CustomerRepository", "Dapper Repository", "SQL-queries voor\nklantprofielen.")
+    Component(orderRepo, "OrderRepository", "Dapper Repository", "SQL-queries voor\nbestellingen.")
+    Component(employeeRepo, "EmployeeRepository", "Dapper Repository", "SQL-queries voor\nmedewerkers.")
+}
+
+' Frontend → Controllers
+Rel(frontend, authCtrl, "POST /api/auth/*", "REST/JSON")
+Rel(frontend, productCtrl, "GET /api/products", "REST/JSON")
+Rel(frontend, categoryCtrl, "GET /api/categories\nGET /api/subcategories", "REST/JSON")
+Rel(frontend, favoriteCtrl, "GET/POST/DELETE\n/api/customers/{id}/favorites", "REST/JSON")
+Rel(frontend, customerCtrl, "GET/PATCH/PUT\n/api/customers/me", "REST/JSON")
+Rel(frontend, orderCtrl, "GET /api/customers/{id}/orders", "REST/JSON")
+Rel(frontend, employeeCtrl, "GET/PATCH /api/employee/me", "REST/JSON")
+
+' Controllers → Services
+Rel(authCtrl, authSvc, "Gebruikt")
+Rel(productCtrl, productSvc, "Gebruikt")
+Rel(categoryCtrl, categorySvc, "Gebruikt")
+Rel(favoriteCtrl, favoriteSvc, "Gebruikt")
+Rel(customerCtrl, customerSvc, "Gebruikt")
+Rel(orderCtrl, orderSvc, "Gebruikt")
+Rel(employeeCtrl, employeeSvc, "Gebruikt")
+
+' Services → Repositories
+Rel(authSvc, authRepo, "Gebruikt")
+Rel(productSvc, productRepo, "Gebruikt")
+Rel(categorySvc, categoryRepo, "Gebruikt")
+Rel(favoriteSvc, favoriteRepo, "Gebruikt")
+Rel(customerSvc, customerRepo, "Gebruikt")
+Rel(orderSvc, orderRepo, "Gebruikt")
+Rel(employeeSvc, employeeRepo, "Gebruikt")
+
+' Repositories → Database
+Rel(authRepo, database, "SQL via Dapper", "TCP/5432")
+Rel(productRepo, database, "SQL via Dapper", "TCP/5432")
+Rel(categoryRepo, database, "SQL via Dapper", "TCP/5432")
+Rel(favoriteRepo, database, "SQL via Dapper", "TCP/5432")
+Rel(customerRepo, database, "SQL via Dapper", "TCP/5432")
+Rel(orderRepo, database, "SQL via Dapper", "TCP/5432")
+Rel(employeeRepo, database, "SQL via Dapper", "TCP/5432")
+
+@enduml
