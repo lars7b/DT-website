@@ -90,6 +90,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var response = await client.GetAsync("/api/order/1");
 
@@ -104,6 +105,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var response = await client.GetAsync("/api/order/9999999");
 
@@ -115,6 +117,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var response = await client.GetAsync("/api/order");
 
@@ -129,6 +132,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var item = new CartItemDto
         {
@@ -147,6 +151,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var delete_response = await client.DeleteAsync("api/shoppingcart");
         var response = await client.PostAsync("/api/order", null);
@@ -159,6 +164,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AdminApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var order = new OrderDto
         {
@@ -177,6 +183,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var order = new OrderDto
         {
@@ -195,6 +202,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var response = await client.PutAsync("/api/order/1/cancel", null);
 
@@ -206,6 +214,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var response = await client.PutAsync("/api/order/9999999/cancel", null);
 
@@ -217,6 +226,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AdminApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var response = await client.DeleteAsync("/api/order/1");
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -227,6 +237,7 @@ public class OrderContollerTests : IClassFixture<CustomApiFactory>
     {
         var factory = new AuthenticatedApiFactory();
         await factory.InitializeAsync();
+        await factory.SeedData();
         var client = factory.CreateClient();
         var response = await client.DeleteAsync("/api/order/1");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);

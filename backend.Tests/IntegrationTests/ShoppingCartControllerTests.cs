@@ -108,10 +108,7 @@ public class ShoppingCartControllerTests
     public async Task AddItemToShoppingCart_ShouldReturn400BadRequest_WhenItemIsNull()
     {
         // ACT
-        var response = await _authenticatedClient.PostAsJsonAsync(
-            "/api/shoppingcart/items",
-            (CartItemDto)null
-        );
+        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items",(CartItemDto)null);
 
         // ASSERT
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -121,7 +118,7 @@ public class ShoppingCartControllerTests
     public async Task AddItemToShoppingCart_ShouldReturn204NoContent_WhenItemAddedSuccessfully()
     {
         // ARRANGE
-        await _authenticatedClient.DeleteAsync("/api/shoppingcart/items");
+        await _authenticatedClient.DeleteAsync("/api/shoppingcart");
         var item = new CartItemDto { ProductId = 1, Quantity = 3 };
 
         // ACT
@@ -129,6 +126,8 @@ public class ShoppingCartControllerTests
 
         // ASSERT
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+
     }
 
     [Fact]

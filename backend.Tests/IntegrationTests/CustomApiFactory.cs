@@ -16,6 +16,7 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     protected virtual bool UseFakeAuth => false;
     protected virtual bool UseFakeAdmin => false;
+    protected virtual bool SeedDatabase => false;
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:15-alpine")
         .WithDatabase("test_db")
@@ -46,27 +47,10 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await Task.WhenAll(_dbContainer.StartAsync(), _redisContainer.StartAsync());
 
         await InitializeDatabaseAsync();
-    }
-
-    private async Task WaitForDatabaseAsync()
-    {
-        var connString = _dbContainer.GetConnectionString();
-
-        for (int i = 0; i < 10; i++)
+        if (SeedDatabase)
         {
-            try
-            {
-                await using var conn = new NpgsqlConnection(connString);
-                await conn.OpenAsync();
-                return;
-            }
-            catch
-            {
-                await Task.Delay(500);
-            }
+            await SeedData();
         }
-
-        throw new Exception("Database not ready");
     }
 
     private async Task InitializeDatabaseAsync()
@@ -78,6 +62,44 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         var basePath = Path.Combine(AppContext.BaseDirectory, "database");
 
         var schemaPath = Path.Combine(basePath, "01-schema.sql");
+        // var seedPath = Path.Combine(basePath, "02-data.sql");
+        // var testseedPath = Path.GetFullPath(
+        //     Path.Combine(
+        //         AppContext.BaseDirectory,
+        //         "..",
+        //         "..",
+        //         "..",
+        //         "..",
+        //         "backend.Tests",
+        //         "testdata.sql"
+        //     )
+        // );
+
+        if (!File.Exists(schemaPath))
+            throw new FileNotFoundException("Schema file not found", schemaPath);
+
+        // if (!File.Exists(seedPath))
+        // throw new FileNotFoundException("Seed file not found", seedPath);
+
+        // if (!File.Exists(testseedPath))
+        //     throw new FileNotFoundException("Schema file not found", testseedPath);
+
+        string sql_scripts = await File.ReadAllTextAsync(schemaPath);
+
+        // Voer het scripts uit
+        await using var command = new NpgsqlCommand(sql_scripts, connection);
+        await command.ExecuteNonQueryAsync();
+    }
+
+    public async Task SeedData()
+    {
+        // delete everything to ensure no errors
+        
+        //seed data
+        var basePath = Path.Combine(AppContext.BaseDirectory, "database");
+        var connectionString = _dbContainer.GetConnectionString();
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
         var seedPath = Path.Combine(basePath, "02-data.sql");
         var testseedPath = Path.GetFullPath(
             Path.Combine(
@@ -91,36 +113,36 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             )
         );
 
-        if (!File.Exists(schemaPath))
-            throw new FileNotFoundException("Schema file not found", schemaPath);
-
         if (!File.Exists(seedPath))
             throw new FileNotFoundException("Seed file not found", seedPath);
 
         if (!File.Exists(testseedPath))
             throw new FileNotFoundException("Schema file not found", testseedPath);
 
-        string sql_scripts = await File.ReadAllTextAsync(schemaPath);
         string seed_scripts = await File.ReadAllTextAsync(seedPath);
         string test_scripts = await File.ReadAllTextAsync(testseedPath);
 
-        // Voer het scripts uit
-        await using var command = new NpgsqlCommand(sql_scripts, connection);
-        await command.ExecuteNonQueryAsync();
-
         var truncate = """
             TRUNCATE TABLE
-            order_status_history,
-            order_items,
-            orders,
-            cart_items,
-            shopping_carts,
-            customers
+                users,
+                employees,
+                customers,
+                categories,
+                subcategories,
+                products,
+                shopping_carts,
+                cart_items,
+                orders,
+                order_items,
+                order_status_history,
+                payments,
+                reviews,
+                favorites
             RESTART IDENTITY CASCADE;
             """;
 
-        await using var middle_command = new NpgsqlCommand(truncate, connection);
-        await middle_command.ExecuteNonQueryAsync();
+        await using var truncate_command = new NpgsqlCommand(truncate, connection);
+        await truncate_command.ExecuteNonQueryAsync();
 
         await using var second_command = new NpgsqlCommand(seed_scripts, connection);
         await second_command.ExecuteNonQueryAsync();
@@ -200,15 +222,19 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 public class AuthenticatedApiFactory : CustomApiFactory
 {
     protected override bool UseFakeAuth => true;
+
+    protected override bool SeedDatabase => true;
 }
 
 public class UnauthenticatedApiFactory : CustomApiFactory
 {
     protected override bool UseFakeAuth => false;
+    protected override bool SeedDatabase => true;
 }
 
 public class AdminApiFactory : CustomApiFactory
 {
     protected override bool UseFakeAuth => true;
     protected override bool UseFakeAdmin => true;
+    protected override bool SeedDatabase => true;
 }

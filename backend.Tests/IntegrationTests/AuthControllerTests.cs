@@ -15,8 +15,6 @@ public class AuthControllerTests : IntegrationTestBase
         // ARRANGE
         var request = new RegisterDto 
         { 
-            FirstName = "Test",
-            LastName = "User",
             Email = "nieuw@ikea.nl", 
             Password = "VeiligWachtwoord123!",
             FirstName = "Nieuwe",

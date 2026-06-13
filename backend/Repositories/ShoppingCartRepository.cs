@@ -123,7 +123,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
         {
             con = new NpgsqlConnection(_connectionString);
         }
-        long result = await con.QuerySingleAsync<long>(query, new { user_id }, transaction);
+        long result = await con.QueryFirstOrDefaultAsync<long>(query, new { user_id }, transaction);
         return result;
     }
     private async Task<bool> ProductExistsAsync(
