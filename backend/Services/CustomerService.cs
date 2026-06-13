@@ -43,8 +43,8 @@ public class CustomerService : ICustomerService
     public async Task<(bool Success, string Message)> DeleteCustomerAsync(int userId, string password)
     {
         User? user = await _userRepository.GetUserByIdAsync(userId);
-        if(user == null) return (false, "Update failed.");
-        bool isValid = true;//Argon2.Verify(user.PasswordHash, password);
+        if (user == null) return (false, "Update failed.");
+        bool isValid = Argon2.Verify(user.PasswordHash, password);
         if (!isValid) return (false, "Update failed.");
 
         var deleteStatus = await _customerRepository.DeleteCustomerAsync(userId);

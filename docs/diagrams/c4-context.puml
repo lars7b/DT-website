@@ -1,0 +1,19 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram — WoonWereld
+
+Person(customer, "Klant", "Bezoekt de webshop, bekijkt producten,\nbeheerd favorieten en bekijkt bestellingen.")
+Person(employee, "Medewerker / Admin", "Beheert producten, bestellingen\nen gebruikers via het admin dashboard.")
+
+System(woonwereld, "WoonWereld Webshop", "Webapplicatie voor het bekijken en\nbeheren van woonproducten.")
+
+System_Ext(postgres, "PostgreSQL Database", "Slaat alle applicatiedata op:\ngebruikers, producten, bestellingen, etc.")
+
+Rel(customer, woonwereld, "Gebruikt", "HTTPS")
+Rel(employee, woonwereld, "Beheert via admin dashboard", "HTTPS")
+Rel(woonwereld, postgres, "Leest en schrijft data", "TCP/5432")
+
+@enduml

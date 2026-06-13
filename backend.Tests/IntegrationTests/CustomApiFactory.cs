@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
@@ -25,11 +24,15 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .Build();
 
     private readonly RedisContainer _redisContainer = new RedisBuilder()
-        .WithImage("redis:7")
+        .WithImage("redis:7-alpine")
         .Build();
 
     public CustomApiFactory()
     {
+        Environment.SetEnvironmentVariable(
+            "JWT_SECRET_KEY",
+            "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!"
+        );
         Environment.SetEnvironmentVariable(
             "JwtSettings__Key",
             "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!"
@@ -40,9 +43,8 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await _dbContainer.StartAsync();
-        await _redisContainer.StartAsync();
-        await WaitForDatabaseAsync();
+        await Task.WhenAll(_dbContainer.StartAsync(), _redisContainer.StartAsync());
+
         await InitializeDatabaseAsync();
     }
 
@@ -136,16 +138,30 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 config.AddInMemoryCollection(
                     new Dictionary<string, string?>
                     {
-                        ["ConnectionStrings:DefaultConnection"] =
-                            _dbContainer.GetConnectionString(),
-
-                        ["ConnectionStrings:RedisDefaultConnection"] =
-                            _redisContainer.GetConnectionString(),
+                        {
+                            "ConnectionStrings:DefaultConnection",
+                            _dbContainer.GetConnectionString()
+                        },
+                        {
+                            "ConnectionStrings:RedisDefaultConnection",
+                            _redisContainer.GetConnectionString()
+                        },
+                        { "DB_PASSWORD", "dummy_db_password" },
+                        { "REDIS_PASSWORD", "dummy_redis_password" },
+                        {
+                            "JWT_SECRET_KEY",
+                            "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!"
+                        },
+                        {
+                            "JwtSettings:Key",
+                            "A_Very_Long_Super_Secret_Key_For_Testing_Only_12345!"
+                        },
+                        { "JwtSettings:Issuer", "TestIssuer" },
+                        { "JwtSettings:Audience", "TestAudience" },
                     }
                 );
             }
         );
-
         if (UseFakeAuth && !UseFakeAdmin)
         {
             builder.ConfigureTestServices(services =>
