@@ -188,6 +188,7 @@ public class ShoppingCartControllerTests
     public async Task UpdateItemToShoppingCart_ShouldUpdateQuantity()
     {
         // Arrange
+        await _authenticatedClient.DeleteAsync("/api/shoppingcart");
         var postitem = new CartItemDto
         {
             Id = 1,

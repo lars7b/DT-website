@@ -10,27 +10,27 @@
 
 -- Users
 INSERT INTO "users"
-("id", "email", "password_hash", "role")
+("email", "password_hash", "role")
 VALUES
-(1, 'customer1@test.com', 'hashedpassword', 'Customer'),
-(2, 'customer2@test.com', 'hashedpassword', 'Customer'),
-(3, 'admin@test.com', 'hashedpassword', 'Admin');
+('customer1@test.com', 'hashedpassword', 'Customer'),
+('customer2@test.com', 'hashedpassword', 'Customer'),
+('admin@test.com', 'hashedpassword', 'Admin');
 
 -- Customers
 INSERT INTO "customers"
-("id", "user_id", "first_name", "last_name", "phone", "address")
+("user_id", "first_name", "last_name", "phone", "address")
 VALUES
-(1, 1, 'John', 'Doe', '0611111111', 'Amsterdam 1'),
-(2, 2, 'Jane', 'Smith', '0622222222', 'Amsterdam 2');
+(1, 'John', 'Doe', '0611111111', 'Amsterdam 1'),
+(2, 'Jane', 'Smith', '0622222222', 'Amsterdam 2');
 
 -- Employees
 
 -- Shopping carts
 INSERT INTO "shopping_carts"
-("id", "customer_id")
+("customer_id")
 VALUES
-(1, 1),
-(2, 2);
+(1),
+(2);
 
 -- Cart items
 INSERT INTO "cart_items"
