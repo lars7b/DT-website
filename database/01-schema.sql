@@ -125,9 +125,9 @@ CREATE TABLE IF NOT EXISTS "reviews" (
     "product_id" BIGINT NOT NULL,
     "rating" INT,
     "comment" VARCHAR(100),
-    "review_date" DATE,
+	"review_date" DATE DEFAULT CURRENT_DATE,
     CONSTRAINT "fk_reviews_customer" 
-        FOREIGN KEY ("customer_id") REFERENCES "customers" ("id") ON DELETE SET NULL,
+        FOREIGN KEY ("customer_id") REFERENCES "customers" ("id") ON DELETE RESTRICT,
     CONSTRAINT "fk_reviews_product" 
         FOREIGN KEY ("product_id") REFERENCES "products" ("id")
 );
