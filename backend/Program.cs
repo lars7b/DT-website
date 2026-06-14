@@ -10,6 +10,10 @@ using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.HttpOverrides;
 
+using Dapper;
+using Npgsql;
+using Isopoh.Cryptography.Argon2;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -121,6 +125,42 @@ app.UseAuthorization();
 app.UseMiddleware<RateLimitMiddleware>();
 app.MapControllers(); // Maps api routes
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrEmpty(connectionString))
+{
+    await SeedAdminUserAsync(connectionString);
+}
+
 app.Run();
 
-public partial class Program { } // maakt de class public zodat het testproject er toegang toe heeft
+
+static async Task SeedAdminUserAsync(string connectionString)
+{
+    await using var connection = new NpgsqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    var adminExists = await connection.ExecuteScalarAsync<bool>(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE email = 'admin@woonwereld.nl')"
+    );
+
+    if (!adminExists)
+    {
+        string passwordHash = Argon2.Hash("AdminWachtwoord123!");
+
+        var userId = await connection.ExecuteScalarAsync<int>(
+            "INSERT INTO users (email, password_hash, role) VALUES (@Email, @PasswordHash, 'Admin') RETURNING id;",
+            new { Email = "admin@woonwereld.nl", PasswordHash = passwordHash }
+        );
+
+        await connection.ExecuteAsync(
+            @"INSERT INTO employees (user_id, first_name, last_name, phone, position) 
+              VALUES (@UserId, 'Systeem', 'Beheerder', '0612345678', 'Hoofdbeheerder');",
+            new { UserId = userId }
+        );
+
+        Console.WriteLine("✅ Admin account succesvol toegevoegd aan de database.");
+    }
+}
+
+
+public partial class Program { }
