@@ -25,7 +25,7 @@ public class EmployeeService : IEmployeeService
 
     public async Task<CustomerAdminDto?> GetCustomerByEmailAsync(string email)
     {
-        return await _employeeRepository.GetCustomerByEmailAsync(email);
+        return await _employeeRepository.GetCustomerByEmailAsync(email.Trim().ToLower());
     }
     
     public async Task<IEnumerable<OrderDto>> GetOrdersByUserIdAsync(int userId)
@@ -35,6 +35,7 @@ public class EmployeeService : IEmployeeService
 
     public async Task<(bool Success, string Message)> CreateEmployeeAsync(CreateEmployeeDto request)
     {
+        request.Email = request.Email.Trim().ToLower();
         string passwordHash = Argon2.Hash(request.Password);
 
         var result = await _employeeRepository.CreateEmployeeAsync(request, passwordHash);

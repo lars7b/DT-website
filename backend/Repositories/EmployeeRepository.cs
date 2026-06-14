@@ -52,7 +52,7 @@ public class EmployeeRepository : IEmployeeRepository
                 SELECT u.id AS UserId, u.email, c.first_name AS FirstName, c.last_name AS LastName, c.phone, c.address
                 FROM users u
                 LEFT JOIN customers c ON u.id = c.user_id
-                WHERE u.email = @Email;";
+                WHERE LOWER(u.email) = LOWER(@Email);";
 
             return await connection.QuerySingleOrDefaultAsync<CustomerAdminDto>(sql, new { Email = email });
         }

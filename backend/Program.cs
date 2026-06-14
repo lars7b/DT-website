@@ -151,14 +151,11 @@ static async Task SeedAdminUserAsync(string connectionString)
             "INSERT INTO users (email, password_hash, role) VALUES (@Email, @PasswordHash, 'Admin') RETURNING id;",
             new { Email = "admin@woonwereld.nl", PasswordHash = passwordHash }
         );
-
         await connection.ExecuteAsync(
             @"INSERT INTO employees (user_id, first_name, last_name, phone, position) 
               VALUES (@UserId, 'Systeem', 'Beheerder', '0612345678', 'Hoofdbeheerder');",
             new { UserId = userId }
         );
-
-        Console.WriteLine("✅ Admin account succesvol toegevoegd aan de database.");
     }
 }
 
