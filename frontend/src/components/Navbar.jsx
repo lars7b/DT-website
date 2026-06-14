@@ -85,7 +85,7 @@ export default function Navbar() {
             👤
           </Link>
         )}
-
+         {isLoggedIn ? (
         <Link
           to="/winkelwagen"
           className="cart-button relative hover:text-black"
@@ -94,7 +94,7 @@ export default function Navbar() {
           <span className="cart-badge absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
             {cartCount}
           </span>
-        </Link>
+        </Link>): ("")}
       </div>
     </nav>
   );

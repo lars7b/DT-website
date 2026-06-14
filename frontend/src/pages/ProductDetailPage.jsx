@@ -1,8 +1,8 @@
 // ProductDetailPage.jsx
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import { useAuth } from "../context/AuthContext";
 
 export default function ProductDetailPage() {
   const { token, isLoggedIn } = useAuth();
@@ -25,38 +25,39 @@ export default function ProductDetailPage() {
     // Backend request voor het ophalen van specifieke product details.
     // Voorbeeld endpoint: GET /api/products/${id}
     // De backend moet data terugsturen op basis van de 'products' tabel: id, name, description, price.
+    const controller = new AbortController();
 
     const fetchProductDetails = async () => {
       try {
-        // TODO: Vervang dit door de daadwerkelijke fetch() of axios.get() request
-        // const response = await fetch(`${import.meta.env.VITE_API_URL}/${id || 1}`);
-        // if (!response.ok) throw new Error('Product niet gevonden');
-        // const data = await response.json();
+        setIsLoading(true);
+        setError(null);
 
-        // Tijdelijke mock data gebaseerd op het meegeleverde database schema
-        const mockData = {
-          id: id || 1,
-          name: 'Bank "Rotterdam"',
-          description:
-            "Lorem ipsum l-orcalor sit amet, consectetur adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.",
-          price: "899.00",
-          // Attributen zoals afmetingen en materiaal staan momenteel niet expliciet in de database schema,
-          // deze kunnen toegevoegd worden in een JSON veld of in de description text.
-          dimensions: "220x95x85 cm",
-          material: "Stof",
-        };
+        const response = await fetch(`${baseUrl}/products/${id}`, {
+          signal: controller.signal,
+        });
 
-        // setProduct(data); // Activeer dit wanneer de backend is gekoppeld
-        setProduct(mockData);
-        setIsLoading(false);
+        if (response.status === 404) {
+          throw new Error("Product niet gevonden.");
+        }
+
+        if (!response.ok) {
+          throw new Error("Fout bij ophalen product.");
+        }
+
+        const data = await response.json();
+        setProduct(data);
       } catch (err) {
-        setError("Fout bij het ophalen van het product.");
+        if (err.name !== "AbortError") {
+          setError(err.message);
+        }
+      } finally {
         setIsLoading(false);
       }
     };
 
     fetchProductDetails();
-  }, [id]);
+    return () => controller.abort();
+  }, [id, baseUrl]);
 
   useEffect(() => {
     if (!token) {
@@ -71,33 +72,38 @@ export default function ProductDetailPage() {
       try {
         const profileResponse = await fetch(`${baseUrl}/customer/me`, {
           headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal
+          signal: controller.signal,
         });
 
         if (!profileResponse.ok) {
-          throw new Error('Kon profiel niet ophalen.');
+          throw new Error("Kon profiel niet ophalen.");
         }
 
         const profile = await profileResponse.json();
         if (!profile?.id) {
-          throw new Error('Klant id ontbreekt in profiel.');
+          throw new Error("Klant id ontbreekt in profiel.");
         }
 
         setCustomerId(profile.id);
 
         const favoritesResponse = await fetch(
           `${baseUrl}/customers/${profile.id}/favorites`,
-          { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          },
         );
 
         if (favoritesResponse.ok) {
           const favorites = await favoritesResponse.json();
-          const favoriteSet = new Set((favorites || []).map((fav) => fav.productId));
+          const favoriteSet = new Set(
+            (favorites || []).map((fav) => fav.productId),
+          );
           setIsFavorite(favoriteSet.has(Number(id)));
         }
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Fout bij ophalen favorieten', err);
+        if (err.name !== "AbortError") {
+          console.error("Fout bij ophalen favorieten", err);
         }
       }
     };
@@ -147,19 +153,19 @@ export default function ProductDetailPage() {
   // Handler voor het toevoegen aan favorieten
   const handleToggleFavorite = async () => {
     if (!isLoggedIn || !token || !customerId) {
-      console.warn('Je moet ingelogd zijn om favorieten op te slaan.');
+      console.warn("Je moet ingelogd zijn om favorieten op te slaan.");
       return;
     }
 
     const endpoint = `${baseUrl}/customers/${customerId}/favorites/${product.id}`;
     try {
       const response = await fetch(endpoint, {
-        method: isFavorite ? 'DELETE' : 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        method: isFavorite ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok && response.status !== 409) {
-        throw new Error('Favoriet bijwerken mislukt.');
+        throw new Error("Favoriet bijwerken mislukt.");
       }
 
       setIsFavorite((prev) => !prev);
@@ -223,7 +229,7 @@ export default function ProductDetailPage() {
 
           <p className="product-price text-2xl font-bold text-black mb-6">
             €{" "}
-            {parseFloat(product.price).toLocaleString("nl-NL", {
+            {Number(product.price ?? 0).toLocaleString("nl-NL", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -235,17 +241,22 @@ export default function ProductDetailPage() {
 
           <div className="product-attributes text-sm mb-6 space-y-1 font-medium">
             <p>
-              Afmetingen:{" "}
+              Categorie:
               <span className="font-normal text-gray-600">
-                {product.dimensions}
+                {" "}
+                {product.categoryName || "Onbekend"}
               </span>
             </p>
-            <p>
-              Materiaal:{" "}
-              <span className="font-normal text-gray-600">
-                {product.material}
-              </span>
-            </p>
+
+            {product.subcategoryName && (
+              <p>
+                Subcategorie:
+                <span className="font-normal text-gray-600">
+                  {" "}
+                  {product.subcategoryName}
+                </span>
+              </p>
+            )}
           </div>
 
           {/* TODO: Voorraad status zou dynamisch berekend kunnen worden als er een 'inventory' tabel wordt toegevoegd */}
@@ -266,7 +277,7 @@ export default function ProductDetailPage() {
               className="favorite-button p-3 border border-gray-300 rounded hover:bg-gray-50 text-gray-500 transition"
               title="Toevoegen aan favorieten"
             >
-              {isFavorite ? '♥' : '♡'}
+              {isFavorite ? "♥" : "♡"}
             </button>
           </div>
         </div>
