@@ -23,9 +23,25 @@ public sealed class ProductsController : ControllerBase
         [FromQuery] string? search,
         [FromQuery] int? categoryId,
         [FromQuery] int? subcategoryId,
-        CancellationToken cancellationToken)
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
+        [FromQuery] string? sort,
+        [FromQuery] int? limit,
+        [FromQuery] int? offset,
+        CancellationToken cancellationToken
+    )
     {
-        var products = await _productService.GetProductsAsync(search, categoryId, subcategoryId, cancellationToken);
+        var products = await _productService.GetProductsAsync(
+            search,
+            categoryId,
+            subcategoryId,
+            minPrice,
+            maxPrice,
+            sort,
+            limit,
+            offset,
+            cancellationToken
+        );
         return Ok(products);
     }
 
@@ -33,7 +49,10 @@ public sealed class ProductsController : ControllerBase
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ProductDto>> GetProductById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductDto>> GetProductById(
+        int id,
+        CancellationToken cancellationToken
+    )
     {
         var product = await _productService.GetProductByIdAsync(id, cancellationToken);
         if (product is null)

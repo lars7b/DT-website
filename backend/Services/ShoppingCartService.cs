@@ -5,9 +5,6 @@ using Backend.DTOs;
 using Backend.Models;
 using Backend.Repositories;
 using StackExchange.Redis;
-using Backend.DTOs;
-using Backend.Models;
-using Backend.Repositories;
 
 public sealed class ShoppingCartService : IShoppingCartService
 {
@@ -147,7 +144,7 @@ public sealed class ShoppingCartService : IShoppingCartService
             bool success = await _shoppingCartRepository.UpdateItems(existingCart);
             if (success)
             {
-                await _redis.KeyDeleteAsync($"shopping_cart:{existingCart.CustomerId}");
+                await _redis.KeyDeleteAsync($"shopping_cart:{existingCart.CustomerId}"); // existingCart.CustomerId 
             }
             return success;
         }

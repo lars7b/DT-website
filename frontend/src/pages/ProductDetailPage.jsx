@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
+import { categoryPlaceholders } from "../data/categoryPlaceholders";
 
 export default function ProductDetailPage() {
   const { token, isLoggedIn } = useAuth();
@@ -54,10 +55,13 @@ export default function ProductDetailPage() {
         setIsLoading(false);
       }
     };
-
     fetchProductDetails();
     return () => controller.abort();
   }, [id, baseUrl]);
+  
+  const productImage =
+    categoryPlaceholders[Number(product?.categoryId)] ??
+    "/placeholder-category.jpg";
 
   useEffect(() => {
     if (!token) {
@@ -206,16 +210,24 @@ export default function ProductDetailPage() {
         {/* Linkerzijde: Afbeeldingen galerij */}
         <div className="product-images-section w-1/2">
           {/* TODO: In de toekomst kunnen product afbeeldingen uit een aparte tabel ('product_images') gehaald worden */}
-          <div className="main-image-container w-full h-96 bg-gray-100 mb-4 flex items-center justify-center text-gray-400">
-            [Hoofdafbeelding {product.name}]
+          <div className="main-image-container w-full h-96 bg-gray-100 mb-4 overflow-hidden rounded-lg">
+            <img
+              src={productImage}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="thumbnail-gallery flex space-x-4">
-            {[1, 2, 3, 4].map((thumb) => (
+            {[1, 2, 3, 4].map((index) => (
               <div
-                key={thumb}
-                className="thumbnail-item w-20 h-20 bg-gray-100 flex items-center justify-center text-xs text-gray-400 cursor-pointer border hover:border-black transition"
+                key={index}
+                className="w-20 h-20 overflow-hidden border rounded"
               >
-                [Thumb {thumb}]
+                <img
+                  src={productImage}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
             ))}
           </div>

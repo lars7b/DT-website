@@ -1,6 +1,6 @@
+using System.Text;
 using Backend.Models;
 using Npgsql;
-using System.Text;
 
 namespace Backend.Repositories;
 
@@ -10,29 +10,39 @@ public class ProductRepository
 
     public ProductRepository(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
+        _connectionString =
+            configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException(
+                "Connection string 'DefaultConnection' is missing."
+            );
     }
 
     public async Task<IReadOnlyList<Product>> GetProductsAsync(
         string? search,
         int? categoryId,
         int? subcategoryId,
-        CancellationToken cancellationToken = default)
+        decimal? minPrice,
+        decimal? maxPrice,
+        string? sort,
+        int? offset,
+        int? limit,
+        CancellationToken cancellationToken = default
+    )
     {
         var sql = new StringBuilder(
             @"SELECT p.id,
-                     p.name,
-                     p.description,
-                     p.price,
-                     p.category_id,
-                     p.subcategory_id,
-                     c.name AS category_name,
-                     s.name AS subcategory_name
-              FROM products p
-              LEFT JOIN categories c ON c.id = p.category_id
-              LEFT JOIN subcategories s ON s.id = p.subcategory_id
-              WHERE 1 = 1");
+                 p.name,
+                 p.description,
+                 p.price,
+                 p.category_id,
+                 p.subcategory_id,
+                 c.name AS category_name,
+                 s.name AS subcategory_name
+          FROM products p
+          LEFT JOIN categories c ON c.id = p.category_id
+          LEFT JOIN subcategories s ON s.id = p.subcategory_id
+          WHERE 1 = 1"
+        );
 
         await using var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -57,7 +67,37 @@ public class ProductRepository
             command.Parameters.AddWithValue("subcategoryId", subcategoryId.Value);
         }
 
-        sql.Append(" ORDER BY p.id ASC");
+        if (minPrice.HasValue)
+        {
+            sql.Append(" AND p.price >= @minPrice");
+            command.Parameters.AddWithValue("minPrice", minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            sql.Append(" AND p.price <= @maxPrice");
+            command.Parameters.AddWithValue("maxPrice", maxPrice.Value);
+        }
+
+        if (sort == "price_asc")
+            sql.Append(" ORDER BY p.price ASC");
+        else if (sort == "price_desc")
+            sql.Append(" ORDER BY p.price DESC");
+        else
+            sql.Append(" ORDER BY p.id ASC");
+
+        if (limit.HasValue)
+        {
+            sql.Append(" LIMIT @limit");
+            command.Parameters.AddWithValue("limit", limit.Value);
+        }
+
+        if (offset.HasValue)
+        {
+            sql.Append(" OFFSET @offset");
+            command.Parameters.AddWithValue("offset", offset.Value);
+        }
+
         command.CommandText = sql.ToString();
 
         var products = new List<Product>();
@@ -73,9 +113,13 @@ public class ProductRepository
         return products;
     }
 
-    public async Task<Product?> GetProductByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Product?> GetProductByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default
+    )
     {
-        const string sql = @"SELECT p.id,
+        const string sql =
+            @"SELECT p.id,
                                     p.name,
                                     p.description,
                                     p.price,
@@ -115,7 +159,8 @@ public class ProductRepository
             reader.GetOrdinal("category_id"),
             reader.GetOrdinal("subcategory_id"),
             reader.GetOrdinal("category_name"),
-            reader.GetOrdinal("subcategory_name"));
+            reader.GetOrdinal("subcategory_name")
+        );
     }
 
     private static Product MapProduct(NpgsqlDataReader reader, ProductOrdinals ordinals)
@@ -139,7 +184,7 @@ public class ProductRepository
                 : reader.GetString(ordinals.CategoryName),
             SubcategoryName = reader.IsDBNull(ordinals.SubcategoryName)
                 ? null
-                : reader.GetString(ordinals.SubcategoryName)
+                : reader.GetString(ordinals.SubcategoryName),
         };
     }
 
@@ -151,5 +196,6 @@ public class ProductRepository
         int CategoryId,
         int SubcategoryId,
         int CategoryName,
-        int SubcategoryName);
+        int SubcategoryName
+    );
 }

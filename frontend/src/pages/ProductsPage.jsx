@@ -1,319 +1,243 @@
-// ProductsPage.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import { categoryPlaceholders } from "../data/categoryPlaceholders";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ProductsPage() {
   const { token, isLoggedIn } = useAuth();
   const baseUrl = import.meta.env.VITE_API_URL;
 
-  // State variabelen voor het opslaan van producten, categorieën en laad-statussen
-  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+
+  const [sortOrder, setSortOrder] = useState("price_asc");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(2000);
+
+  const [search, setSearch] = useState("");
 
   const [customerId, setCustomerId] = useState(null);
-  const [favoriteIds, setFavoriteIds] = useState(() => new Set());
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
 
-  // State voor filters en sortering (klaar om mee te sturen in een API request)
-  const [sortOrder, setSortOrder] = useState("price_asc");
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  // -------------------------
+  // PRODUCTS (React Query ONLY)
+  // -------------------------
+  const {
+    data: products = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: [
+      "products",
+      { sortOrder, selectedCategory, minPrice, maxPrice, search },
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams();
 
+      params.append("sort", sortOrder);
+
+      if (selectedCategory)
+        params.append("categoryId", selectedCategory);
+
+      if (minPrice != null)
+        params.append("minPrice", minPrice);
+
+      if (maxPrice != null)
+        params.append("maxPrice", maxPrice);
+
+      if (search)
+        params.append("search", search);
+
+      const res = await fetch(
+        `${baseUrl}/products?${params.toString()}`
+      );
+
+      if (!res.ok) throw new Error("Fout bij ophalen producten");
+
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // -------------------------
+  // CATEGORIES
+  // -------------------------
   useEffect(() => {
     const fetchCategories = async () => {
-      try {
-        const res = await fetch(`${baseUrl}/categories`);
-
-        if (!res.ok) {
-          throw new Error("Kon categorieën niet ophalen");
-        }
-
-        const data = await res.json();
-        setCategories(data);
-      } catch (err) {
-        console.error(err);
-      }
+      const res = await fetch(`${baseUrl}/categories`);
+      const data = await res.json();
+      setCategories(data);
     };
 
     fetchCategories();
   }, [baseUrl]);
 
+  // -------------------------
+  // FAVORITES
+  // -------------------------
   useEffect(() => {
-    if (!token) {
-      setCustomerId(null);
-      setFavoriteIds(new Set());
-      return;
-    }
+    if (!token) return;
 
-    const controller = new AbortController();
+    const load = async () => {
+      const profile = await fetch(`${baseUrl}/customer/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json());
 
-    const fetchCustomerAndFavorites = async () => {
-      try {
-        const profileResponse = await fetch(`${baseUrl}/customer/me`, {
+      setCustomerId(profile.id);
+
+      const favorites = await fetch(
+        `${baseUrl}/customers/${profile.id}/favorites`,
+        {
           headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        });
-
-        if (!profileResponse.ok) {
-          throw new Error("Kon profiel niet ophalen.");
         }
+      ).then((r) => r.json());
 
-        const profile = await profileResponse.json();
-        if (!profile?.id) {
-          throw new Error("Klant id ontbreekt in profiel.");
-        }
-
-        setCustomerId(profile.id);
-
-        const favoritesResponse = await fetch(
-          `${baseUrl}/customers/${profile.id}/favorites`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: controller.signal,
-          },
-        );
-
-        if (favoritesResponse.ok) {
-          const favorites = await favoritesResponse.json();
-          const ids = new Set((favorites || []).map((fav) => fav.productId));
-          setFavoriteIds(ids);
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("Fout bij ophalen favorieten", err);
-        }
-      }
+      setFavoriteIds(
+        new Set((favorites || []).map((f) => f.productId))
+      );
     };
 
-    fetchCustomerAndFavorites();
-    return () => controller.abort();
+    load();
   }, [token, baseUrl]);
 
-  useEffect(() => {
-    // Backend request moet hier komen voor de producten.
-    // Voorbeeld endpoint: GET /api/products?sort=price_asc&category=1,2
-    // Haalt data op uit de 'products' tabel, eventueel gefilterd op 'category_id'.
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        const queryParams = new URLSearchParams({
-          sort: sortOrder,
-          categories: selectedCategories.join(","),
-        });
-
-        const res = await fetch(`${baseUrl}/products?${queryParams}`);
-        const data = await res.json();
-
-        setProducts(data);
-
-        setIsLoading(false);
-      } catch (err) {
-        setError("Fout bij het ophalen van de producten.");
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [sortOrder, selectedCategories]); // Request wordt opnieuw uitgevoerd als sortering of filters veranderen
-
+  // -------------------------
+  // FAVORITE TOGGLE
+  // -------------------------
   const handleToggleFavorite = async (e, productId) => {
-    e.preventDefault(); // Voorkomt dat de Link naar de detailpagina wordt geactiveerd
-    if (!isLoggedIn || !token || !customerId) {
-      console.warn("Je moet ingelogd zijn om favorieten op te slaan.");
-      return;
-    }
+    e.preventDefault();
 
-    const isFavorite = favoriteIds.has(productId);
-    const endpoint = `${baseUrl}/customers/${customerId}/favorites/${productId}`;
+    if (!token || !customerId) return;
 
-    try {
-      const response = await fetch(endpoint, {
-        method: isFavorite ? "DELETE" : "POST",
+    const isFav = favoriteIds.has(productId);
+
+    await fetch(
+      `${baseUrl}/customers/${customerId}/favorites/${productId}`,
+      {
+        method: isFav ? "DELETE" : "POST",
         headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok && response.status !== 409) {
-        throw new Error("Favoriet bijwerken mislukt.");
       }
-
-      setFavoriteIds((prev) => {
-        const next = new Set(prev);
-        if (isFavorite) {
-          next.delete(productId);
-        } else {
-          next.add(productId);
-        }
-        return next;
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const favoriteIdsMemo = useMemo(() => favoriteIds, [favoriteIds]);
-
-  const handleCategoryFilterChange = (categoryId) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId],
     );
+
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      isFav ? next.delete(productId) : next.add(productId);
+      return next;
+    });
   };
 
+  // -------------------------
+  // CATEGORY FILTER
+  // -------------------------
+  const handleCategoryFilterChange = (id) => {
+    setSelectedCategory((prev) => (prev === id ? null : id));
+  };
+
+  // -------------------------
+  // UI
+  // -------------------------
   return (
-    <div className="products-page-container min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="page-layout flex px-16 py-8 max-w-7xl mx-auto">
-        {/* Zijbalk Filters */}
-        <aside className="sidebar-filters w-64 pr-8 flex-shrink-0">
-          <h2 className="filter-header font-bold mb-6">FILTEREN OP</h2>
+      <div className="flex px-16 py-8 max-w-7xl mx-auto gap-8">
 
-          <div className="filter-section-category mb-6 border-b pb-4">
-            <h3 className="filter-title font-semibold flex justify-between w-full mb-3">
-              Categorie <span>^</span>
-            </h3>
-            <ul className="category-list space-y-2 text-sm text-gray-600">
-              {categories.map((cat) => (
-                <li key={cat.id} className="category-list-item">
-                  <label className="cursor-pointer flex items-center">
-                    <input
-                      type="checkbox"
-                      className="category-checkbox mr-2"
-                      checked={selectedCategories.includes(cat.id)}
-                      onChange={() => handleCategoryFilterChange(cat.id)}
-                    />
-                    {cat.name}
-                  </label>
-                </li>
-              ))}
-            </ul>
+        {/* FILTERS */}
+        <aside className="w-64">
+          <h2 className="font-bold mb-4">Filters</h2>
+
+          {/* CATEGORY */}
+          <div className="mb-6">
+            {categories.map((cat) => (
+              <label key={cat.id} className="block text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedCategory === cat.id}
+                  onChange={() =>
+                    handleCategoryFilterChange(cat.id)
+                  }
+                />
+                <span className="ml-2">{cat.name}</span>
+              </label>
+            ))}
           </div>
 
-          <div className="filter-section-price mb-6 border-b pb-4">
-            <h3 className="filter-title font-semibold flex justify-between w-full mb-3">
-              Prijs <span>^</span>
-            </h3>
-            {/* Opmerking: Voor een werkende slider moet een aparte component of library gebruikt worden */}
-            <div className="price-slider h-1 bg-gray-200 relative mb-4 mt-2">
-              <div className="price-slider-track absolute left-0 right-1/4 h-full bg-blue-600"></div>
-              <div className="price-slider-thumb-min absolute left-0 -top-1 w-3 h-3 bg-blue-600 rounded-full"></div>
-              <div className="price-slider-thumb-max absolute right-1/4 -top-1 w-3 h-3 bg-blue-600 rounded-full"></div>
-            </div>
-            <div className="price-range-labels flex justify-between text-sm text-gray-600">
-              <span>0</span>
-              <span>-15500</span>
-              <span>€ 149.00</span>
-            </div>
-          </div>
-
-          <div className="filter-section-color mb-6 border-b pb-4">
-            <h3 className="filter-title font-semibold flex justify-between w-full mb-3">
-              Kleur <span>^</span>
-            </h3>
-            <div className="color-options flex gap-2 flex-wrap">
-              {/* Opmerking: Kleur zit momenteel niet in het database schema, kan later worden toegevoegd als attribuut */}
-              {[
-                "bg-orange-800",
-                "bg-blue-600",
-                "bg-teal-500",
-                "bg-yellow-600",
-                "bg-gray-400",
-                "bg-black",
-              ].map((color, i) => (
-                <div
-                  key={i}
-                  className={`color-swatch w-6 h-6 rounded ${color} cursor-pointer border border-gray-300`}
-                ></div>
-              ))}
-            </div>
-          </div>
-
-          <div className="filter-section-availability">
-            <h3 className="filter-title font-semibold flex justify-between w-full mb-3">
-              Beschikbaarheid <span>^</span>
-            </h3>
-            <label className="availability-label text-sm text-gray-600 flex items-center cursor-pointer">
-              <input type="checkbox" className="availability-checkbox mr-2" />
-              Alleen op voorraad
-            </label>
+          {/* PRICE */}
+          <div>
+            <input
+              type="range"
+              min="0"
+              max="5000"
+              value={minPrice}
+              onChange={(e) =>
+                setMinPrice(Number(e.target.value))
+              }
+            />
+            <input
+              type="range"
+              min="0"
+              max="5000"
+              value={maxPrice}
+              onChange={(e) =>
+                setMaxPrice(Number(e.target.value))
+              }
+            />
           </div>
         </aside>
 
-        {/* Producten Grid & Sortering */}
-        <main className="main-content flex-1">
-          <div className="sorting-controls flex justify-end mb-6 text-sm">
-            <div className="sorting-wrapper flex items-center space-x-2">
-              <span className="sorting-label text-gray-500">Sorteer op:</span>
-              <select
-                className="sorting-dropdown border border-gray-300 p-1 rounded bg-white cursor-pointer"
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-              >
-                <option value="price_asc">Prijs oplopend</option>
-                <option value="price_desc">Prijs aflopend</option>
-                <option value="newest">Nieuwste</option>
-              </select>
-            </div>
-          </div>
+        {/* PRODUCTS */}
+        <main className="flex-1">
+          <div className="grid grid-cols-3 gap-6">
 
-          {isLoading ? (
-            <div className="loading-state text-center py-10 text-gray-500">
-              Producten laden...
-            </div>
-          ) : error ? (
-            <div className="error-state text-center py-10 text-red-500">
-              {error}
-            </div>
-          ) : (
-            <div className="product-grid grid grid-cols-3 gap-6">
-              {products.map((product) => (
+            {isLoading && <p>Loading...</p>}
+            {error && <p>{error.message}</p>}
+
+            {products.map((product) => {
+              const image =
+                categoryPlaceholders[product.categoryId] ??
+                "/placeholder.jpg";
+
+              return (
                 <Link
                   to={`/product/${product.id}`}
                   key={product.id}
-                  className="product-card group cursor-pointer bg-white p-4 block hover:shadow-md transition-shadow"
+                  className="bg-white p-4 block"
                 >
-                  <div className="product-image-container relative w-full h-48 bg-gray-100 mb-4 overflow-hidden">
+                  <div className="relative h-40 mb-2">
                     <img
-                      src={
-                        categoryPlaceholders[Number(product.categoryId)] ??
-                        "/placeholder-category.jpg"
-                      }
-                      alt={product.name}
+                      src={image}
                       className="w-full h-full object-cover"
                     />
 
                     <button
-                      onClick={(e) => handleToggleFavorite(e, product.id)}
-                      className="favorite-toggle-btn absolute top-2 right-2 text-gray-400 hover:text-red-500 z-10"
-                      title="Toevoegen aan favorieten"
+                      onClick={(e) =>
+                        handleToggleFavorite(e, product.id)
+                      }
+                      className="absolute top-2 right-2"
                     >
-                      {favoriteIdsMemo.has(product.id) ? "♥" : "♡"}
+                      {favoriteIds.has(product.id)
+                        ? "♥"
+                        : "♡"}
                     </button>
                   </div>
-                  <h3 className="product-name font-semibold text-sm">
-                    {product.name}
-                  </h3>
-                  <p className="product-price text-sm text-gray-600">
+
+                  <h3>{product.name}</h3>
+
+                  <p>
                     €{" "}
-                    {parseFloat(product.price).toLocaleString("nl-NL", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    {Number(product.price).toLocaleString(
+                      "nl-NL",
+                      {
+                        minimumFractionDigits: 2,
+                      }
+                    )}
                   </p>
                 </Link>
-              ))}
-
-              {products.length === 0 && (
-                <div className="no-results col-span-3 text-center py-10 text-gray-500">
-                  Geen producten gevonden voor deze selectie.
-                </div>
-              )}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </main>
       </div>
     </div>
