@@ -50,9 +50,12 @@ export default function Navbar() {
         </a>
       </div>
 
-      <div className="nav-actions flex space-x-5 text-gray-600 items-center">
-        <button className="search-button hover:text-black">🔍</button>
 
+      <div className="nav-actions flex space-x-5 text-gray-600 items-center">
+        <Link to="/zoeken" className="search-button hover:text-black text-lg">
+          🔍
+        </Link>
+    
         {/* Schakel dynamisch tussen de profielknop en inlogpoppetje */}
         {isLoggedIn ? (
           <div className="flex items-center space-x-4">

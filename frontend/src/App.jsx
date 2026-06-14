@@ -13,6 +13,8 @@ import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import ShoppingCartPage from './pages/ShoppingCartPage';
 import CheckOutPage from './pages/CheckOutPage';
+import SearchPage from './pages/SearchPage';
+
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
           <Route path="/producten" element={<ProductsPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/zoeken" element={<SearchPage />} />
+
 
           {/* Routes uitsluitend voor Customers */}
           <Route element={<ProtectedRoute allowedRoles={['Customer']} />}>

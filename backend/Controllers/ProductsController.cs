@@ -44,4 +44,19 @@ public sealed class ProductsController : ControllerBase
 
         return Ok(product);
     }
+
+    // POST /api/products to add a new product.
+    [HttpPost]
+    [ProducesResponseType(typeof(Product), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<Product>> CreateProduct([FromBody] Product product, CancellationToken cancellationToken)
+    {
+        var createdProduct = await _productService.CreateProductAsync(product, cancellationToken);
+        if (createdProduct is null)
+        {
+            return BadRequest("Product moet een geldige naam en prijs hebben.");
+        }
+
+        return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, createdProduct);
+    }
 }

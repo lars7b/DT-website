@@ -88,6 +88,7 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
         // Voer het scripts uit
         await using var command = new NpgsqlCommand(sql_scripts, connection);
+
         await command.ExecuteNonQueryAsync();
     }
 
