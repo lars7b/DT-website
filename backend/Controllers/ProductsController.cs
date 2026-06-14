@@ -26,8 +26,8 @@ public sealed class ProductsController : ControllerBase
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
         [FromQuery] string? sort,
-        [FromQuery] int? limit,
         [FromQuery] int? offset,
+        [FromQuery] int? limit,
         CancellationToken cancellationToken
     )
     {
@@ -38,8 +38,8 @@ public sealed class ProductsController : ControllerBase
             minPrice,
             maxPrice,
             sort,
-            limit,
             offset,
+            limit,
             cancellationToken
         );
         return Ok(products);

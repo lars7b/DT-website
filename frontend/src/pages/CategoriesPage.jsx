@@ -70,7 +70,7 @@ export default function CategoriesPage() {
               const image =
                 categoryPlaceholders[Number(category.id)] ??
                 "/placeholder-category.jpg";
-
+              
               return (
                 <Link
                   key={category.id}

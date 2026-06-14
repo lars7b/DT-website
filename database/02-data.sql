@@ -7,7 +7,7 @@ INSERT INTO "public"."categories" ("id", "name", "description") VALUES
 (2, 'Beds', NULL),
 (3, 'Bookcases & shelving units', NULL),
 (4, 'Cabinets & cupboards', NULL),
-(5, 'Café furniture', NULL),
+(5, 'Cafe furniture', NULL),
 (6, 'Chairs', NULL),
 (7, 'Chests of drawers & drawer units', NULL),
 (8, 'Children''s furniture', NULL),

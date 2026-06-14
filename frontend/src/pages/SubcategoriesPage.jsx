@@ -86,24 +86,29 @@ export default function SubcategoriesPage() {
                 "/placeholder-category.jpg";
 
               return (
-                <div
-                  key={subcategory.id}
-                  className="category-card relative h-56 rounded-lg overflow-hidden"
+                <Link
+                  to={`/producten?subcategoryId=${subcategory.id}`}
+                  className="block h-full"
                 >
-                  <img
-                    src={image}
-                    alt={subcategory.name}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
+                  <div
+                    key={subcategory.id}
+                    className="category-card relative h-56 rounded-lg overflow-hidden"
+                  >
+                    <img
+                      src={image}
+                      alt={subcategory.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
 
-                  <div className="absolute inset-0 bg-black/40" />
+                    <div className="absolute inset-0 bg-black/40" />
 
-                  <div className="relative z-10 flex h-full items-center justify-center">
-                    <h2 className="text-white text-xl font-bold">
-                      {subcategory.name}
-                    </h2>
+                    <div className="relative z-10 flex h-full items-center justify-center">
+                      <h2 className="text-white text-xl font-bold">
+                        {subcategory.name}
+                      </h2>
+                    </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
 
