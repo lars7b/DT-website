@@ -1,4 +1,5 @@
 using Backend.DTOs;
+using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 
