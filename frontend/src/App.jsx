@@ -9,7 +9,12 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminDashboard from './pages/AdminDashboard';
+import OrdersPage from './pages/OrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage';
+import ShoppingCartPage from './pages/ShoppingCartPage';
+import CheckOutPage from './pages/CheckOutPage';
 import SearchPage from './pages/SearchPage';
+
 
 function App() {
   return (
@@ -29,6 +34,10 @@ function App() {
           {/* Routes uitsluitend voor Customers */}
           <Route element={<ProtectedRoute allowedRoles={['Customer']} />}>
             <Route path="/profiel" element={<ProfilePage />} />
+            <Route path="/winkelwagen" element={<ShoppingCartPage />} />
+            <Route path="/afrekenen" element={<CheckOutPage />} />
+            <Route path="/bestellingen" element={<OrdersPage />} />
+            <Route path="/bestelling/:id" element={<OrderDetailPage />} />
           </Route>
 
           {/* Routes uitsluitend voor Admin / Employee */}

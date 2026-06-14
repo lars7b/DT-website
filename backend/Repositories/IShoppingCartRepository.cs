@@ -5,7 +5,7 @@ namespace Backend.Repositories;
 
 public interface IShoppingCartRepository
 {
-    public Task<ShoppingCart?> GetCartByCustomerIdAsync(
+    public Task<ShoppingCart?> GetCartByUserIdAsync(
         long userId,
         NpgsqlConnection? con = null,
         NpgsqlTransaction? transaction = null, CancellationToken token = default

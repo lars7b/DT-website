@@ -1,6 +1,7 @@
 using System.Security.Claims;
-using Backend.Models;
+using Backend.DTOs;
 using Backend.Services;
+using Backend.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,17 +20,17 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpGet("{id:long}")]
-    public async Task<ActionResult<Payment>> GetPaymentById(
+    public async Task<ActionResult<PaymentDto>> GetPaymentById(
         long id,
         CancellationToken cancellationToken
     )
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) //TODO check if id is long
+        if (userId == null || !long.TryParse(userId, out long parsedUserId))
         {
             return Unauthorized();
         }
-        Payment? payment = await _paymentService.GetPaymentByIdAsync(id,long.Parse(userId), cancellationToken);
+        PaymentDto? payment = await _paymentService.GetPaymentByIdAsync(id, parsedUserId, cancellationToken);
         if (payment == null)
         {
             return NotFound();
@@ -37,8 +38,13 @@ public sealed class PaymentController : ControllerBase
         return Ok(payment);
     }
 
+    /// <summary>
+    /// returns all payments if user is admin otherwise only the users payments
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     [HttpGet] //TODO add query for admin per user or ...
-    public async Task<ActionResult<IEnumerable<Payment>>> GetAllPayments(
+    public async Task<ActionResult<IEnumerable<PaymentDto>>> GetAllPayments(
         CancellationToken cancellationToken
     )
     {
@@ -54,7 +60,7 @@ public sealed class PaymentController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreatePayment([FromBody] Payment payment) // of order
+    public async Task<ActionResult> CreatePayment([FromBody] CreatePaymentDto payment)
     {
         string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         string? userrole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -65,7 +71,7 @@ public sealed class PaymentController : ControllerBase
         bool result = await _paymentService.CreatePaymentAsync(long.Parse(userId),payment);
         if (result)
         {
-            return CreatedAtAction(nameof(GetPaymentById), new { id = payment.Id }, payment);
+            return NoContent();
         }
         return BadRequest();
     }
@@ -77,7 +83,7 @@ public sealed class PaymentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> UpdatePayment(
         long id,
-        [FromBody] Payment payment,
+        [FromBody] PaymentDto payment,
         CancellationToken cancellationToken
     )
     {
@@ -95,7 +101,7 @@ public sealed class PaymentController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id:long}")]
-    public async Task<ActionResult> DeletePayment(long id, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeletePayment(long id,CancellationToken cancellationToken)
     {
         bool succesful = await _paymentService.DeletePaymentAsync(id,cancellationToken);
         if (succesful == false)

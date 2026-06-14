@@ -1,4 +1,4 @@
-using Backend.Models;
+using Backend.DTOs;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,8 +18,8 @@ public sealed class ProductsController : ControllerBase
 
     // GET /api/products with optional query filters.
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<Product>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(
+    [ProducesResponseType(typeof(IReadOnlyList<ProductDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductDto>>> GetProducts(
         [FromQuery] string? search,
         [FromQuery] int? categoryId,
         [FromQuery] int? subcategoryId,
@@ -31,9 +31,9 @@ public sealed class ProductsController : ControllerBase
 
     // GET /api/products/{id} for details of one product.
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(Product), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Product>> GetProductById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductDto>> GetProductById(int id, CancellationToken cancellationToken)
     {
         var product = await _productService.GetProductByIdAsync(id, cancellationToken);
         if (product is null)

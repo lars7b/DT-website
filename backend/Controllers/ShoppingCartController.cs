@@ -55,22 +55,7 @@ public sealed class ShoppingCartController : ControllerBase
         }
         return BadRequest();
     }
-    [HttpPut("items")]
-    public async Task<ActionResult> UpdateItemToShoppingCart([FromBody] CartItemDto item)
-    {
-        string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
-        {
-            return Unauthorized();
-        }
-        if(item== null||item.Quantity<1){return BadRequest();}
-        bool result = await _shoppingCartService.UpdateItemsAsync(long.Parse(userId), item);
-        if (result)
-        {
-            return NoContent();
-        }
-        return BadRequest();
-    }
+  
 
     [HttpDelete]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

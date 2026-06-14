@@ -64,6 +64,11 @@ public sealed class ShoppingCartService : IShoppingCartService
                 Id = item.Id,
                 ProductId = item.ProductId,
                 Quantity = item.Quantity,
+                ProductName = item.Product == null
+                    ? null
+                    : item.Product.Name,
+                ProductDescription = item.Product == null? null : item.Product.Description,
+                PricePerUnit = item.Product == null? null : item.Product.Price,
             })
             .ToList();
         ShoppingCartDto shoppingcart = new ShoppingCartDto
@@ -83,7 +88,7 @@ public sealed class ShoppingCartService : IShoppingCartService
 
     public async Task<bool> AddItemsAsync(long userid, CartItemDto items)
     {
-        if (items.Quantity < 1)
+        if (items.Quantity < 1||items.ProductId<1)
         {
             return false;
         }
@@ -103,7 +108,7 @@ public sealed class ShoppingCartService : IShoppingCartService
 
     public async Task<bool> UpdateItemsAsync(long userId, CartItemDto item)
     {
-        ShoppingCart? cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userId);
+        ShoppingCart? cart = await _shoppingCartRepository.GetCartByUserIdAsync(userId);
         if (cart == null || cart.Id == null)
         {
             return false;
@@ -124,7 +129,7 @@ public sealed class ShoppingCartService : IShoppingCartService
 
     public async Task<bool> UpdateCartAsync(ShoppingCartDto cart)
     {
-        ShoppingCart? existingCart = await _shoppingCartRepository.GetCartByCustomerIdAsync(
+        ShoppingCart? existingCart = await _shoppingCartRepository.GetCartByUserIdAsync(
             cart.CustomerId
         );
         if (existingCart != null)
@@ -151,7 +156,7 @@ public sealed class ShoppingCartService : IShoppingCartService
 
     public async Task<bool> DeleteCartAsync(long userid)
     {
-        ShoppingCart? cart = await _shoppingCartRepository.GetCartByCustomerIdAsync(userid);
+        ShoppingCart? cart = await _shoppingCartRepository.GetCartByUserIdAsync(userid);
         if (cart != null)
         {
             bool success = await _shoppingCartRepository.DeleteCartAsync(cart); // can delete via userid (and shorten the process)

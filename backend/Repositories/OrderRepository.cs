@@ -25,52 +25,84 @@ public class OrderRepository : IOrderRepository
         long? userId,
         CancellationToken token = default
     )
-    { //
-        await using NpgsqlConnection _connection = new NpgsqlConnection(_connectionString);
+    {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
 
-        if (userId == null)
+        string sql = """
+            SELECT
+                o.id,
+                o.customer_id AS CustomerId,
+                o.order_date AS OrderDate,
+                o.status,
+
+                items.id AS ItemSplitId,
+
+                items.id,
+                items.order_id AS OrderId,
+                items.product_id AS ProductId,
+                items.quantity,
+                items.price,
+
+                p.id AS ProductId,
+
+                p.id,
+                p.name,
+                p.description,
+                p.price
+
+            FROM orders o
+            JOIN order_items items
+                ON items.order_id = o.id 
+            JOIN products p
+                ON p.id = items.product_id 
+            """;
+
+        if (userId != null)
         {
-            string sql = """
-                SELECT 
-                    o.id, 
-                    o.customer_id AS customerid,
-                    o.order_date AS orderdate,
-                    o.status
-                FROM orders AS o
-                JOIN order_items AS items ON items.order_id = o.id 
-                WHERE o.id = @id;
+            sql += """
+                 INNER JOIN customers c
+                    ON c.id = o.customer_id
+                WHERE
+                    o.id = @id
+                    AND (
+                        c.user_id = @userId
+                        OR EXISTS (
+                            SELECT 1
+                            FROM users admin_user
+                            WHERE admin_user.id = @userId
+                            AND admin_user.role = 'Admin'
+                        )
+                    )
                 """;
-            Order? order = await _connection.QueryFirstOrDefaultAsync<Order>(sql, new { id });
-            return order;
         }
         else
         {
-            string sql = """
-                SELECT 
-                o.id, 
-                o.customer_id AS customerid ,
-                o.order_date AS orderdate,
-                o.status
-                FROM orders AS o
-                JOIN order_items AS items ON items.order_id = o.id 
-                JOIN customers ON customers.id = o.customer_id 
-                WHERE 
-                    o.id = @id AND 
-                    (customers.user_id = @userId
-                    OR EXISTS (
-                        SELECT 1
-                        FROM users admin_user
-                        WHERE admin_user.id = @userId
-                        AND admin_user.role = 'Admin'
-                    ));
+            sql += """
+                WHERE o.id = @id
                 """;
-            Order? order = await _connection.QueryFirstOrDefaultAsync<Order>(
-                sql,
-                new { userId, id }
-            );
-            return order;
         }
-        // https://stackoverflow.com/questions/7508322/how-do-i-map-lists-of-nested-objects-with-dapper
+
+        Order? result = null;
+
+        await connection.QueryAsync<Order, OrderItem, Product, Order>(
+            sql,
+            (order, item, product) =>
+            {
+                if (result == null)
+                {
+                    result = order;
+                    result.Items = new List<OrderItem>();
+                }
+                item.Product = product;
+                result.Items.Add(item);
+
+                return result;
+            },
+            new { id, userId },
+            splitOn: "ItemSplitId,ProductId"
+        );
+
+        return result;
     }
 
     public async Task<OrderItem?> GetOrderItemByIdAsync(
@@ -83,8 +115,8 @@ public class OrderRepository : IOrderRepository
         OrderItem? order = await _connection.QueryFirstOrDefaultAsync<OrderItem>(
             """
             SELECT items.id, items.order_id AS orderid, items.product_id AS productid, items.quantity, items.price
-            FROM order_items AS items
-            JOIN orders AS o ON items.order_id = o.id 
+            FROM order_items AS items 
+            JOIN orders AS o ON items.order_id = o.id  
             JOIN customers ON customers.id = o.customer_id 
             WHERE o.id = @id AND (
                 customers.user_id = @userId
@@ -110,23 +142,34 @@ public class OrderRepository : IOrderRepository
                 o.order_date AS OrderDate,
                 o.status,
 
+                items.id AS ItemSplitId,
+
                 items.id,
                 items.order_id AS OrderId,
                 items.product_id AS ProductId,
                 items.quantity,
-                items.price
+                items.price,
 
-            FROM orders AS o
-            INNER JOIN order_items items
-                ON o.id = items.order_id
+                p.id AS ProductId,
+
+                p.id,
+                p.name,
+                p.description,
+                p.price
+
+            FROM orders o
+            JOIN order_items items
+                ON o.id = items.order_id  
+            JOIN products p
+                ON p.id = items.product_id  
             """;
 
         if (userId != null)
         {
             sql += """
-                JOIN customers AS c
+                   INNER JOIN customers c
                     ON c.id = o.customer_id
-                JOIN users AS u
+                INNER JOIN users u
                     ON u.id = c.user_id
                 WHERE
                     c.user_id = @userId
@@ -135,15 +178,16 @@ public class OrderRepository : IOrderRepository
                         FROM users admin_user
                         WHERE admin_user.id = @userId
                         AND admin_user.role = 'Admin'
-                    );
+                    )
+                Order BY o.order_date DESC
                 """;
         }
 
         var orderDict = new Dictionary<long, Order>();
 
-        await connection.QueryAsync<Order, OrderItem, Order>(
+        await connection.QueryAsync<Order, OrderItem, Product, Order>(
             sql,
-            (order, item) =>
+            (order, item, product) =>
             {
                 if (!orderDict.TryGetValue(order.Id, out var existingOrder))
                 {
@@ -153,12 +197,13 @@ public class OrderRepository : IOrderRepository
                     orderDict.Add(existingOrder.Id, existingOrder);
                 }
 
+                item.Product = product;
                 existingOrder.Items.Add(item);
 
                 return existingOrder;
             },
             new { userId },
-            splitOn: "id"
+            splitOn: "ItemSplitId,ProductId"
         );
 
         return orderDict.Values.ToList();
@@ -175,7 +220,7 @@ public class OrderRepository : IOrderRepository
                 """
                 INSERT INTO orders (customer_id, order_date, status)
                 SELECT c.id, NOW(), 'Pending'
-                FROM customers c
+                FROM customers c  
                 JOIN users u ON u.id = c.user_id
                 WHERE u.id = @userId
                 RETURNING id;
@@ -183,6 +228,11 @@ public class OrderRepository : IOrderRepository
                 new { userId },
                 transaction
             );
+            if (orderId == 0)
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
             int resultitems = await _connection.ExecuteAsync(
                 """
                 INSERT INTO order_items (order_id, product_id, quantity, price)
@@ -191,22 +241,27 @@ public class OrderRepository : IOrderRepository
                     ci.product_id,
                     ci.quantity,
                     p.price
-                FROM cart_items ci
-                JOIN shopping_carts AS sc ON sc.id = ci.cart_id
-                JOIN products AS p ON p.id = ci.product_id
-                JOIN customers AS c ON sc.customer_id = c.id
-                JOIN users AS u ON u.id = c.user_id
+                FROM cart_items ci  
+                JOIN shopping_carts AS sc ON sc.id = ci.cart_id 
+                JOIN products AS p ON p.id = ci.product_id 
+                JOIN customers AS c ON sc.customer_id = c.id 
+                JOIN users AS u ON u.id = c.user_id 
                 WHERE u.id = @userId;
                 """,
                 new { orderId, userId },
                 transaction
             );
+            if (resultitems == 0)
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
             await _connection.ExecuteAsync(
                 """
                 DELETE FROM cart_items
                 WHERE cart_id IN (
-                    SELECT sc.id FROM shopping_carts AS sc
-                    JOIN customers AS c ON sc.customer_id = c.id
+                    SELECT sc.id FROM shopping_carts AS sc  
+                    JOIN customers AS c ON sc.customer_id = c.id  
                     JOIN users AS u ON u.id = c.user_id   
                     WHERE u.id = @userId
                 );
@@ -217,7 +272,7 @@ public class OrderRepository : IOrderRepository
             resultitems += await _connection.ExecuteAsync(
                 """
                 INSERT INTO order_status_history (order_id, status, status_date)
-                VALUES (@orderId, @status, CURRENT_DATE);
+                VALUES (@orderId, @status, CURRENT_TIMESTAMP);
                 """,
                 new { orderId, status = "Pending" },
                 transaction
@@ -251,15 +306,19 @@ public class OrderRepository : IOrderRepository
         try
         {
             string query = """
-                UPDATE orders SET status = @Status 
-                JOIN payments AS p ON p.order_id = orders.id
-                WHERE id = @Id AND (p.status = 'Paid' OR p.status = 'Completed');
+                UPDATE orders
+                SET status = @Status
+                WHERE orders.id = @Id;
                 """;
             int result = await _connection.ExecuteAsync(
                 query,
                 new { Status = order.Status, Id = order.Id },
                 transaction
             );
+            if (result == 0)
+            {
+                return false;
+            }
             result += await _connection.ExecuteAsync(
                 """
                 INSERT INTO order_status_history (order_id, status, status_date)
@@ -268,14 +327,32 @@ public class OrderRepository : IOrderRepository
                 new { orderId = order.Id, status = order.Status },
                 transaction
             );
+            if (order.Status == "Refunded")
+            {
+                result += await _connection.ExecuteAsync(
+                    """
+                    UPDATE payments SET status = 'Refunded' WHERE order_id = @OrderId;
+                    """,
+                    new { orderId = order.Id, status = order.Status },
+                    transaction
+                );
+            }
             await transaction.CommitAsync();
-            return result == 2;
+            return result >= 2;
         }
         catch
         {
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    public async Task<List<OrderStatusHistory>> GetHistoryByOrderIdAsync(long orderId)
+    {
+        await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
+        string sql = @"SELECT * FROM order_status_history WHERE order_id = @orderId;";
+        IEnumerable<OrderStatusHistory> history = await connection.QueryAsync<OrderStatusHistory>(sql, new { orderId });
+        return history.ToList();
     }
 
     public async Task<bool> DeleteOrder(long id)

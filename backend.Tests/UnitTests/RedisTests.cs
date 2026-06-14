@@ -104,14 +104,14 @@ public class ShoppingCartServiceTests
         _dbMock.Verify(
             r =>
                 r.StringSetAsync(
-                    $"shopping_cart:{userId}",
+                    It.IsAny<RedisKey>(),
                     It.IsAny<RedisValue>(),
-                    TimeSpan.FromMinutes(15),
+                    It.IsAny<TimeSpan?>(),
                     It.IsAny<bool>(),
                     It.IsAny<When>(),
                     It.IsAny<CommandFlags>()
                 ),
-            Times.Once
+            Times.Never
         );
     }
 
@@ -141,7 +141,7 @@ public class ShoppingCartServiceTests
                 r.StringSetAsync(
                     It.IsAny<RedisKey>(),
                     It.IsAny<RedisValue>(),
-                    It.IsAny<TimeSpan>(),
+                    It.IsAny<TimeSpan?>(),
                     It.IsAny<bool>(),
                     It.IsAny<When>(),
                     It.IsAny<CommandFlags>()
