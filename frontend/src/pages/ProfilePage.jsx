@@ -534,7 +534,16 @@ export default function ProfilePage() {
 
           {activeTab === "bestellingen" && (
             <section>
-              <h1 className="text-2xl font-bold mb-6">Bestelgeschiedenis</h1>
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">Bestelgeschiedenis</h1>
+
+                <button
+                  onClick={() => navigate("/bestellingen")}
+                  className="text-sm text-gray-500 hover:text-blue-600 transition"
+                >
+                  Alle bestellingen →
+                </button>
+              </div>
 
               {ordersLoading ? (
                 <div className="text-center py-10 text-gray-500">

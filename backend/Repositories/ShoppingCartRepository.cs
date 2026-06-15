@@ -165,29 +165,6 @@ public class ShoppingCartRepository : IShoppingCartRepository
         );
     }
 
-    private async Task<CartItem?> GetCartItemByProductIdAsync(
-        long cartId,
-        long productId,
-        NpgsqlConnection connection,
-        NpgsqlTransaction transaction
-    )
-    {
-        return await connection.QueryFirstOrDefaultAsync<CartItem>(
-            """
-            SELECT
-                id,
-                cart_id AS CartId,
-                product_id AS ProductId,
-                quantity
-            FROM cart_items
-            WHERE cart_id = @cartId
-              AND product_id = @productId;
-            """,
-            new { cartId, productId },
-            transaction
-        );
-    }
-
     public async Task<bool> AddItemToCartAsync(long userId, CartItem item)
     {
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);

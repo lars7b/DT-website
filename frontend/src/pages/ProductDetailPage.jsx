@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import { categoryPlaceholders } from "../data/categoryPlaceholders";
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from "react-router-dom";
 
 export default function ProductDetailPage() {
   // Zorg ervoor dat de route in App.jsx is ingesteld als: <Route path="/product/:id" element={<ProductDetailPage />} />
@@ -29,11 +29,11 @@ export default function ProductDetailPage() {
 
   // State variabelen voor het reviewformulier
   const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [customerId, setCustomerId] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  
+
   const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
@@ -48,31 +48,33 @@ export default function ProductDetailPage() {
         setIsLoading(true);
         setError(null);
 
- const url = `${baseUrl}/products/${id}`;
-        console.log('Product ophalen via:', url);        
-const response = await fetch(`${url}`, {
+        const url = `${baseUrl}/products/${id}`;
+        console.log("Product ophalen via:", url);
+        const response = await fetch(`${url}`, {
           signal: controller.signal,
         });
-        console.log('Product response status:', response.status);
+        console.log("Product response status:", response.status);
         if (response.status === 404) {
           throw new Error("Product niet gevonden.");
         }
 
         if (!response.ok) {
-          throw new Error(`Fout bij ophalen product. Status: ${response.status}`);
+          throw new Error(
+            `Fout bij ophalen product. Status: ${response.status}`,
+          );
         }
 
         const data = await response.json();
-        console.log('Product data:', data);
+        console.log("Product data:", data);
         setProduct({
           ...data,
-          dimensions: data.dimensions || 'Niet bekend',
-          material: data.material || 'Niet bekend',
+          dimensions: data.dimensions || "Niet bekend",
+          material: data.material || "Niet bekend",
         });
       } catch (err) {
         if (err.name !== "AbortError") {
-          console.error('Fout bij ophalen product:', error)
-          setError(err.message|| 'Fout bij het ophalen van het product.');
+          console.error("Fout bij ophalen product:", err);
+          setError(err.message || "Fout bij het ophalen van het product.");
         }
       } finally {
         setIsLoading(false);
@@ -81,12 +83,12 @@ const response = await fetch(`${url}`, {
     if (baseUrl && id) {
       fetchProductDetails();
     } else {
-      setError('VITE_API_URL of product-id ontbreekt.');
+      setError("VITE_API_URL of product-id ontbreekt.");
       setIsLoading(false);
     }
     return () => controller.abort();
   }, [id, baseUrl]);
-  
+
   const productImage =
     categoryPlaceholders[Number(product?.categoryId)] ??
     "/placeholder-category.jpg";
@@ -98,22 +100,24 @@ const response = await fetch(`${url}`, {
       setIsLoadingReviews(true);
 
       const url = `${baseUrl}/reviews/product/${id}`;
-      console.log('Reviews ophalen via:', url);
+      console.log("Reviews ophalen via:", url);
 
       const response = await fetch(url);
 
-      console.log('Reviews response status:', response.status);
+      console.log("Reviews response status:", response.status);
 
       if (!response.ok) {
-        throw new Error(`Reviews konden niet worden opgehaald. Status: ${response.status}`);
+        throw new Error(
+          `Reviews konden niet worden opgehaald. Status: ${response.status}`,
+        );
       }
 
       const data = await response.json();
-      console.log('Reviews data:', data);
+      console.log("Reviews data:", data);
 
       setReviews(data);
     } catch (error) {
-      console.error('Fout bij ophalen reviews:', error);
+      console.error("Fout bij ophalen reviews:", error);
 
       // Reviews zijn niet essentieel om de productpagina te tonen.
       // Daarom zetten we alleen een lege lijst in plaats van de hele pagina kapot te laten gaan.
@@ -248,7 +252,7 @@ const response = await fetch(`${url}`, {
     event.preventDefault();
 
     if (!comment.trim()) {
-      setReviewError('Vul eerst een reviewtekst in.');
+      setReviewError("Vul eerst een reviewtekst in.");
       return;
     }
 
@@ -266,13 +270,13 @@ const response = await fetch(`${url}`, {
       };
 
       const url = `${baseUrl}/reviews`;
-      console.log('Review plaatsen via:', url);
-      console.log('Nieuwe review:', newReview);
+      console.log("Review plaatsen via:", url);
+      console.log("Nieuwe review:", newReview);
 
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
 
           // Als jouw ReviewsController later [Authorize] krijgt,
           // dan is deze Authorization header alvast voorbereid.
@@ -281,7 +285,7 @@ const response = await fetch(`${url}`, {
         body: JSON.stringify(newReview),
       });
 
-      console.log('Review POST response status:', response.status);
+      console.log("Review POST response status:", response.status);
 
       let data = null;
       try {
@@ -291,18 +295,20 @@ const response = await fetch(`${url}`, {
       }
 
       if (!response.ok) {
-        throw new Error(data?.message || 'Fout bij het plaatsen van je review.');
+        throw new Error(
+          data?.message || "Fout bij het plaatsen van je review.",
+        );
       }
 
-      setComment('');
+      setComment("");
       setRating(5);
-      setReviewSuccess('Je review is geplaatst.');
+      setReviewSuccess("Je review is geplaatst.");
 
       // Reviews opnieuw ophalen, zodat de nieuwe review direct zichtbaar wordt.
       await fetchReviews();
     } catch (error) {
-      console.error('Fout bij plaatsen review:', error);
-      setReviewError(error.message || 'Fout bij het plaatsen van je review.');
+      console.error("Fout bij plaatsen review:", error);
+      setReviewError(error.message || "Fout bij het plaatsen van je review.");
     } finally {
       setIsSubmittingReview(false);
     }
@@ -326,46 +332,46 @@ const response = await fetch(`${url}`, {
       <div className="page-container min-h-screen bg-gray-50 font-sans">
         <Navbar />
         <div className="error-container text-center py-20 text-red-500">
-          {error || 'Product niet gevonden.'}
+          {error || "Product niet gevonden."}
 
           <p className="text-gray-500 text-sm mt-4">
-            Controleer in de console welke URL wordt aangeroepen en welke statuscode terugkomt.
+            Controleer in de console welke URL wordt aangeroepen en welke
+            statuscode terugkomt.
           </p>
         </div>
       </div>
     );
   }
 
-return (
+  return (
     <div className="page-container min-h-screen bg-gray-50 font-sans">
       <Navbar />
 
       <main className="max-w-6xl mx-auto px-16 py-12">
         {/* BOVENSTE GEDEELTE: Product Details (Afbeeldingen + Info + Knoppen) */}
         <section className="product-details-wrapper flex gap-12 bg-white shadow-sm p-8">
-          
           {/* Linkerzijde: Afbeeldingen galerij */}
           <div className="product-images-section w-1/2">
             {/* TODO: In de toekomst kunnen product afbeeldingen uit een aparte tabel ('product_images') gehaald worden */}
             <div className="main-image-container w-full h-96 bg-gray-100 mb-4 flex items-center justify-center text-gray-400">
               <img
-              src={productImage}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
+                src={productImage}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
             </div>
 
-             <div className="thumbnail-gallery flex space-x-4">
-            {[1, 2, 3, 4].map((index) => (
-              <div
-                key={index}
-                className="w-20 h-20 overflow-hidden border rounded"
-              >
-                <img
-                  src={productImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+            <div className="thumbnail-gallery flex space-x-4">
+              {[1, 2, 3, 4].map((index) => (
+                <div
+                  key={index}
+                  className="w-20 h-20 overflow-hidden border rounded"
+                >
+                  <img
+                    src={productImage}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               ))}
             </div>
@@ -386,7 +392,7 @@ return (
             </p>
 
             <p className="product-description text-gray-600 text-sm mb-6 leading-relaxed">
-              {product.description || 'Geen beschrijving beschikbaar.'}
+              {product.description || "Geen beschrijving beschikbaar."}
             </p>
 
             <div className="product-attributes text-sm mb-6 space-y-1 font-medium">
@@ -402,6 +408,23 @@ return (
                   {product.material}
                 </span>
               </p>
+              <p>
+                Categorie:
+                <span className="font-normal text-gray-600">
+                  {" "}
+                  {product.categoryName || "Onbekend"}
+                </span>
+              </p>
+
+              {product.subcategoryName && (
+                <p>
+                  Subcategorie:
+                  <span className="font-normal text-gray-600">
+                    {" "}
+                    {product.subcategoryName}
+                  </span>
+                </p>
+              )}
             </div>
 
             <div className="stock-status flex items-center text-green-600 text-sm font-semibold mb-8">
@@ -422,7 +445,7 @@ return (
                 className="favorite-button p-3 border border-gray-300 rounded hover:bg-gray-50 text-gray-500 transition text-2xl"
                 title="Toevoegen aan favorieten"
               >
-                {isFavorite ? '♥' : '♡'}
+                {isFavorite ? "♥" : "♡"}
               </button>
             </div>
           </div>
@@ -430,9 +453,7 @@ return (
 
         {/* ONDERSTE GEDEELTE: Reviews behouden uit de 'dev' branch */}
         <section className="reviews-section mt-10 bg-white p-8 shadow-sm">
-          <h2 className="reviews-title text-2xl font-bold mb-6">
-            Reviews
-          </h2>
+          <h2 className="reviews-title text-2xl font-bold mb-6">Reviews</h2>
 
           {/* Alleen ingelogde gebruikers mogen een review plaatsen */}
           {isLoggedIn ? (
@@ -457,43 +478,8 @@ return (
                 </select>
               </div>
 
-        {/* Rechterzijde: Product Informatie */}
-        <div className="product-info-section w-1/2 flex flex-col justify-start pt-4">
-          <h1 className="product-title text-3xl font-bold mb-2">
-            {product.name}
-          </h1>
+              {/* Rechterzijde: Product Informatie */}
 
-          <p className="product-price text-2xl font-bold text-black mb-6">
-            €{" "}
-            {Number(product.price ?? 0).toLocaleString("nl-NL", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </p>
-
-          <p className="product-description text-gray-600 text-sm mb-6 leading-relaxed">
-            {product.description}
-          </p>
-
-          <div className="product-attributes text-sm mb-6 space-y-1 font-medium">
-            <p>
-              Categorie:
-              <span className="font-normal text-gray-600">
-                {" "}
-                {product.categoryName || "Onbekend"}
-              </span>
-            </p>
-
-            {product.subcategoryName && (
-              <p>
-                Subcategorie:
-                <span className="font-normal text-gray-600">
-                  {" "}
-                  {product.subcategoryName}
-                </span>
-              </p>
-            )}
-          </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Review</label>
                 <textarea
@@ -504,23 +490,6 @@ return (
                 />
               </div>
 
-<div className="product-actions flex items-center space-x-4">
-            <button
-              onClick={handleAddToCart}
-              disabled={addingToCart}
-              className="add-to-cart-button bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded flex-1 transition disabled:opacity-50"
-            >
-              {addingToCart ? "TOEVOEGEN..." : "IN WINKELWAGEN"}
-            </button>
-            <button
-              onClick={handleToggleFavorite}
-              className="favorite-button p-3 border border-gray-300 rounded hover:bg-gray-50 text-gray-500 transition"
-              title="Toevoegen aan favorieten"
-            >
-              {isFavorite ? "♥" : "♡"}
-            </button>
-          </div>
-        </div>
               {reviewError && (
                 <p className="text-red-500 text-sm mb-3">{reviewError}</p>
               )}
@@ -534,7 +503,7 @@ return (
                 disabled={isSubmittingReview}
                 className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 disabled:bg-gray-400"
               >
-                {isSubmittingReview ? 'Review plaatsen...' : 'Review plaatsen'}
+                {isSubmittingReview ? "Review plaatsen..." : "Review plaatsen"}
               </button>
             </form>
           ) : (
@@ -565,8 +534,8 @@ return (
                 <div key={review.id} className="review-card border rounded p-4">
                   <div className="review-header flex items-center justify-between mb-2">
                     <p className="review-rating font-semibold text-yellow-500">
-                      {'★'.repeat(review.rating)}
-                      {'☆'.repeat(5 - review.rating)}
+                      {"★".repeat(review.rating)}
+                      {"☆".repeat(5 - review.rating)}
                     </p>
 
                     <div className="review-meta text-right">
@@ -585,7 +554,7 @@ return (
                   </div>
 
                   <p className="review-comment text-gray-700">
-                    {review.comment || 'Geen tekst toegevoegd.'}
+                    {review.comment || "Geen tekst toegevoegd."}
                   </p>
                 </div>
               ))}
