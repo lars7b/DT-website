@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS "employees" (
 	"user_id" INT UNIQUE NOT NULL,
 	"first_name" VARCHAR(50) NOT NULL,
 	"last_name" VARCHAR(50) NOT NULL,
-	"phone" VARCHAR(20) UNIQUE,
+	"phone" VARCHAR(20),
 	"position" VARCHAR(50),
 	CONSTRAINT "fk_employees_user"
 		FOREIGN KEY ("user_id") 
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS "customers" (
 	"user_id" INT UNIQUE NOT NULL,
 	"first_name" VARCHAR(50),
 	"last_name" VARCHAR(50),
-	"phone" VARCHAR(20) UNIQUE,
+	"phone" VARCHAR(20),
 	"address" VARCHAR(200),
 	CONSTRAINT "fk_customers_user"
 		FOREIGN KEY ("user_id") 
