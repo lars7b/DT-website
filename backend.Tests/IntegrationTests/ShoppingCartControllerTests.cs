@@ -37,15 +37,15 @@ public class ShoppingCartControllerTests
     [Fact]
     public async Task GetShoppingCart_ShouldReturn200Ok_WhenUserHasCart()
     {
-        // ARRANGE
+        // ARRANGE: ensure user/customer has cart
         var item = new CartItemDto { ProductId = 1, Quantity = 2 };
-        await _unauthenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
+        var createresponse =  await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
+        Assert.Equal(HttpStatusCode.NoContent, createresponse.StatusCode);
 
         // ACT
         var response = await _authenticatedClient.GetAsync("/api/shoppingcart");
 
         // ASSERT
-        // Note: This will likely fail without proper auth setup
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         // var cart = await response.Content.ReadAsAsync<ShoppingCartDto>();
         // Assert.NotNull(cart);
