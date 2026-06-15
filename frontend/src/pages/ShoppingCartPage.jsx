@@ -148,7 +148,8 @@ export default function ShoppingCartPage() {
       // alert("Bestelling geplaatst!");
     } catch (err) {
       console.error(err);
-      alert("Fout bij plaatsen van bestelling");
+      // alert("Fout bij plaatsen van bestelling");
+      navigate("/login");
     }
   };
 

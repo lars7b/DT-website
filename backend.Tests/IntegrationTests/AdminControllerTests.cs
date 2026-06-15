@@ -22,7 +22,7 @@ public class AdminControllerTests : IntegrationTestBase
             Password = "TijdelijkWachtwoord123!",
             FirstName = "Jan",
             LastName = "Jansen",
-            Phone = "0612345678",
+            Phone = "0612365638",
             Position = "Klantenservice"
         };
 

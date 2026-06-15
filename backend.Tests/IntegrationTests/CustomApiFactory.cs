@@ -58,44 +58,36 @@ public class CustomApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         var connectionString = _dbContainer.GetConnectionString();
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
+        await ResetDatabaseAsync(connection);
 
         var basePath = Path.Combine(AppContext.BaseDirectory, "database");
 
         var schemaPath = Path.Combine(basePath, "01-schema.sql");
-        // var seedPath = Path.Combine(basePath, "02-data.sql");
-        // var testseedPath = Path.GetFullPath(
-        //     Path.Combine(
-        //         AppContext.BaseDirectory,
-        //         "..",
-        //         "..",
-        //         "..",
-        //         "..",
-        //         "backend.Tests",
-        //         "testdata.sql"
-        //     )
-        // );
 
         if (!File.Exists(schemaPath))
             throw new FileNotFoundException("Schema file not found", schemaPath);
 
-        // if (!File.Exists(seedPath))
-        // throw new FileNotFoundException("Seed file not found", seedPath);
-
-        // if (!File.Exists(testseedPath))
-        //     throw new FileNotFoundException("Schema file not found", testseedPath);
-
         string sql_scripts = await File.ReadAllTextAsync(schemaPath);
 
-        // Voer het scripts uit
         await using var command = new NpgsqlCommand(sql_scripts, connection);
+        await command.ExecuteNonQueryAsync();
+    }
 
+    private async Task ResetDatabaseAsync(NpgsqlConnection connection)
+    {
+        const string sql = """
+            DROP SCHEMA public CASCADE;
+            CREATE SCHEMA public;
+            """;
+
+        await using var command = new NpgsqlCommand(sql, connection);
         await command.ExecuteNonQueryAsync();
     }
 
     public async Task SeedData()
     {
         // delete everything to ensure no errors
-        
+
         //seed data
         var basePath = Path.Combine(AppContext.BaseDirectory, "database");
         var connectionString = _dbContainer.GetConnectionString();
