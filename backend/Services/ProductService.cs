@@ -1,7 +1,7 @@
+using System.Text.Json;
 using Backend.Models;
 using Backend.Repositories;
 using StackExchange.Redis;
-using System.Text.Json;
 
 namespace Backend.Services;
 
@@ -10,7 +10,7 @@ public class ProductService : IProductService
     private readonly ProductRepository _repository;
     private readonly IDatabase _redis;
 
-    public ProductService(ProductRepository repository,IConnectionMultiplexer redis)
+    public ProductService(ProductRepository repository, IConnectionMultiplexer redis)
     {
         _repository = repository;
         _redis = redis.GetDatabase();
@@ -20,14 +20,33 @@ public class ProductService : IProductService
         string? search,
         int? categoryId,
         int? subcategoryId,
-        CancellationToken cancellationToken = default)
+        decimal? minPrice,
+        decimal? maxPrice,
+        string? sort,
+        int? offset,
+        int? limit,
+        CancellationToken cancellationToken = default
+    )
     {
         search = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 
-        return await _repository.GetProductsAsync(search, categoryId, subcategoryId, cancellationToken);
+        return await _repository.GetProductsAsync(
+            search,
+            categoryId,
+            subcategoryId,
+            minPrice,
+            maxPrice,
+            sort,
+            offset,
+            limit,
+            cancellationToken
+        );
     }
 
-    public async Task<Product?> GetProductByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Product?> GetProductByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default
+    )
     {
         if (id <= 0)
         {

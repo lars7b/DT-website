@@ -10,7 +10,13 @@ public interface IProductService
         string? search,
         int? categoryId,
         int? subcategoryId,
-        CancellationToken cancellationToken = default);
+        decimal? minPrice,
+        decimal? maxPrice,
+        string? sort,
+        int? offset,
+        int? limit,
+        CancellationToken cancellationToken = default
+    );
 
     // Returns one product by id, or null when not found.
     Task<Product?> GetProductByIdAsync(int id, CancellationToken cancellationToken = default);

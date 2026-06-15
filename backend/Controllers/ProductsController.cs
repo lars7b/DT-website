@@ -24,9 +24,25 @@ public sealed class ProductsController : ControllerBase
         [FromQuery] string? search,
         [FromQuery] int? categoryId,
         [FromQuery] int? subcategoryId,
-        CancellationToken cancellationToken)
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
+        [FromQuery] string? sort,
+        [FromQuery] int? offset,
+        [FromQuery] int? limit,
+        CancellationToken cancellationToken
+    )
     {
-        var products = await _productService.GetProductsAsync(search, categoryId, subcategoryId, cancellationToken);
+        var products = await _productService.GetProductsAsync(
+            search,
+            categoryId,
+            subcategoryId,
+            minPrice,
+            maxPrice,
+            sort,
+            offset,
+            limit,
+            cancellationToken
+        );
         return Ok(products);
     }
 

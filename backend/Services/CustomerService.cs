@@ -24,6 +24,7 @@ public class CustomerService : ICustomerService
 
         return new CustomerDto
         {
+            Id = customer.Id,
             FirstName = customer.FirstName,
             LastName = customer.LastName,
             Phone = customer.Phone,

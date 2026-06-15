@@ -1,7 +1,8 @@
 // CategoriesPage.jsx
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { categoryPlaceholders } from "../data/categoryPlaceholders";
+import Navbar from "../components/Navbar";
 
 export default function CategoriesPage() {
   // State variabelen voor het opslaan van de database gegevens en laad-statussen
@@ -19,19 +20,22 @@ export default function CategoriesPage() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, {
-          signal: controller.signal
-        });
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/categories`,
+          {
+            signal: controller.signal,
+          },
+        );
 
         if (!response.ok) {
-          throw new Error('Kon categorieën niet ophalen.');
+          throw new Error("Kon categorieën niet ophalen.");
         }
 
         const data = await response.json();
         setCategories(Array.isArray(data) ? data : []);
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          setError(err.message || 'Fout bij het ophalen van de categorieën.');
+        if (err.name !== "AbortError") {
+          setError(err.message || "Fout bij het ophalen van de categorieën.");
         }
       } finally {
         setIsLoading(false);
@@ -46,38 +50,49 @@ export default function CategoriesPage() {
   return (
     <div className="page-container min-h-screen bg-gray-50 font-sans">
       <Navbar />
-      
+
       <main className="content-wrapper max-w-6xl mx-auto px-16 py-12">
         <h1 className="page-title text-2xl font-bold text-center mb-10 uppercase">
           Al Onze Categorieën
         </h1>
-        
+
         {isLoading ? (
-          <div className="loading-container text-center py-12 text-gray-500">Categorieën laden...</div>
+          <div className="loading-container text-center py-12 text-gray-500">
+            Categorieën laden...
+          </div>
         ) : error ? (
-          <div className="error-container text-center py-12 text-red-500">{error}</div>
+          <div className="error-container text-center py-12 text-red-500">
+            {error}
+          </div>
         ) : (
           <div className="categories-grid grid grid-cols-3 gap-6">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/categorieen/${category.id}`}
-                className="category-card relative h-64 bg-gray-800 rounded-lg overflow-hidden group cursor-pointer flex items-center justify-center"
-              >
-                <div className="category-overlay absolute inset-0 bg-gray-600 opacity-60 group-hover:opacity-50 transition"></div>
-                
-                <div className="category-content relative z-10 text-center px-6">
-                  <h2 className="category-name text-white text-2xl font-bold tracking-wide">
-                    {category.name}
-                  </h2>
-                  {category.description && (
-                    <p className="category-description text-white/80 text-sm mt-3">
-                      {category.description}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            ))}
+            {categories.map((category) => {
+              const image =
+                categoryPlaceholders[Number(category.id)] ??
+                "/placeholder-category.jpg";
+              
+              return (
+                <Link
+                  key={category.id}
+                  to={`/categorieen/${category.id}`}
+                  className="category-card relative h-64 rounded-lg overflow-hidden group"
+                >
+                  <img
+                    src={image}
+                    alt={category.name}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+
+                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition" />
+
+                  <div className="relative z-10 text-center px-6 flex h-full items-center justify-center">
+                    <h2 className="text-white text-2xl font-bold">
+                      {category.name}
+                    </h2>
+                  </div>
+                </Link>
+              );
+            })}
             {categories.length === 0 && (
               <div className="col-span-3 text-center py-12 text-gray-500">
                 Geen categorieën gevonden.

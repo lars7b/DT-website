@@ -7,8 +7,8 @@ namespace Backend.Middleware;
 public class RateLimitMiddleware : IMiddleware
 {
     private readonly IConnectionMultiplexer _redis;
-    private const int UnauthenticatedLimit = 10;
-    private const int AuthenticatedLimit = 100;
+    private const int UnauthenticatedLimit = 60;
+    private const int AuthenticatedLimit = 300;
     private const int WindowSeconds = 60;
 
     public RateLimitMiddleware(IConnectionMultiplexer redis)

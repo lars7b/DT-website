@@ -46,13 +46,13 @@ public class OrderService : IOrderService
                         ProductDescription = item.Product?.Description,
                     })
                     .ToList() ?? new List<OrderItemDto>(),
-
+            // only get by id method has history bc frontend only shows it in detail page for now
             StatusHistory = history
                 ?.Select(h => new OrderStatusHistoryDto
                 {
                     OrderId = h.OrderId,
                     Status = h.Status,
-                    Date = h.Date,
+                    Date = h.StatusDate,
                 })
                 .ToList(),
         };

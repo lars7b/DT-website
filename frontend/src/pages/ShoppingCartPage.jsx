@@ -205,7 +205,15 @@ export default function ShoppingCartPage() {
                       -
                     </button>
 
-                    <span className="px-4">{item.quantity}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) =>
+                        handleQuantityChange(item, Number(e.target.value))
+                      }
+                      className="w-16 text-center border mx-2"
+                    />
 
                     <button
                       className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
@@ -255,7 +263,6 @@ export default function ShoppingCartPage() {
           </div>
         )}
       </div>
-      
     </div>
   );
 }

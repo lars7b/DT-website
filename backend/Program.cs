@@ -6,9 +6,9 @@ using Backend.Validators;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
-using Microsoft.AspNetCore.HttpOverrides;
 
 using Dapper;
 using Npgsql;
@@ -25,12 +25,10 @@ var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
 builder
     .Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy => 
-        policy.RequireRole("Admin"));
+    {
+        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 
-    options.AddPolicy("EmployeeAccess", policy => 
-        policy.RequireRole("Employee", "Admin"));
+        options.AddPolicy("EmployeeAccess", policy => policy.RequireRole("Employee", "Admin"));
     })
     .AddAuthentication(options =>
     {
