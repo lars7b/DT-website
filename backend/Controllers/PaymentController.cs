@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
+using Backend.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -100,7 +101,7 @@ public sealed class PaymentController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id:long}")]
-    public async Task<ActionResult> DeletePayment(long id, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeletePayment(long id,CancellationToken cancellationToken)
     {
         bool succesful = await _paymentService.DeletePaymentAsync(id,cancellationToken);
         if (succesful == false)

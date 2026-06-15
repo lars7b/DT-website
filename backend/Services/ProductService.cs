@@ -77,4 +77,22 @@ public class ProductService : IProductService
         );
         return product;
     }
+
+    public async Task<Product?> CreateProductAsync(Product product, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(product.Name) || product.Price < 0)
+        {
+            return null;
+        }
+
+        if (product.CategoryId is <= 0 || product.SubcategoryId is <= 0)
+        {
+            return null;
+        }
+
+        product.Name = product.Name.Trim();
+        product.Description = string.IsNullOrWhiteSpace(product.Description) ? null : product.Description.Trim();
+
+        return await _repository.CreateProductAsync(product, cancellationToken);
+    }
 }

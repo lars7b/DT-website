@@ -66,7 +66,7 @@ public class UserRepository : IUserRepository
             var sqlUser = @"
                 SELECT id, email, password_hash, role
                 FROM users
-                WHERE email = @Email;";
+                WHERE LOWER(email) = LOWER(@Email);";
             return await connection.QuerySingleOrDefaultAsync<User>(sqlUser, new { email });
         }
         catch (Exception ex)

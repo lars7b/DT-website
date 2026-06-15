@@ -26,7 +26,7 @@ public class AuthService : IAuthService
 
         var newUser = new User
         {
-            Email = request.Email,
+            Email = request.Email.Trim().ToLower(),
             PasswordHash = hashedPassword,
             Role = "Customer"
         };
@@ -41,7 +41,7 @@ public class AuthService : IAuthService
 
     public async Task<string?> LoginAsync(LoginDto request)
     {
-        var user = await _userRepository.GetUserByEmailAsync(request.Email);
+        var user = await _userRepository.GetUserByEmailAsync(request.Email.Trim().ToLower());
 
         if (user == null) return null;
 
@@ -72,7 +72,7 @@ public class AuthService : IAuthService
             return (false, "Onjuist wachtwoord. E-mail is niet gewijzigd.");
         }
 
-        var updateStatus = await _userRepository.ChangeEmailAsync(userId, emailDetails.NewEmail);
+        var updateStatus = await _userRepository.ChangeEmailAsync(userId, emailDetails.NewEmail.Trim().ToLower());
        
         if (!updateStatus) return (false, "Update failed.");
 

@@ -17,6 +17,23 @@ GET {{baseUrl}}/api/shoppingcart
 Authorization: Bearer {{token}}
 Accept: application/json
 
+###
+
+# POST {{Backend_HostAddress}}/api/reviews
+# Content-Type: application/json
+
+# {
+# 	"customerId": 1,
+# 	"productId": 1,
+# 	"rating": 5,
+# 	"comment": "Prima product",
+# 	"reviewDate": "2026-05-11"
+# }
+
+# ###
+
+# GET {{Backend_HostAddress}}/api/reviews/product/1
+# Accept: application/json
 ##################################################
 ### ADD ITEM TO CART
 ##################################################

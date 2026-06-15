@@ -22,7 +22,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
             ?? throw new InvalidOperationException("DB Connection missing");
     }
 
-    public async Task<ShoppingCart?> GetCartByCustomerIdAsync(
+    public async Task<ShoppingCart?> GetCartByUserIdAsync(
         long userId,
         NpgsqlConnection? connection = null,
         NpgsqlTransaction? transaction = null,
@@ -34,11 +34,10 @@ public class ShoppingCartRepository : IShoppingCartRepository
             connection = new NpgsqlConnection(_connectionString);
         }
         ShoppingCart? cart = await connection.QueryFirstOrDefaultAsync<ShoppingCart>(
-            @"SELECT sc.* FROM shopping_carts AS sc
+            @"SELECT sc.* FROM shopping_carts AS sc  
             JOIN customers AS c ON sc.customer_id = c.id
             WHERE c.user_id = @userId 
             LIMIT 1;",
-            // "SELECT * FROM get_all_items_from_cart;",
             new { userId },
             transaction
         );
@@ -117,15 +116,53 @@ public class ShoppingCartRepository : IShoppingCartRepository
     {
         string query =
             @"INSERT INTO shopping_carts (customer_id)
-            Select id from customers 
-            where user_id = @User_id
-            RETURNING id;";
+            SELECT id FROM customers 
+            WHERE user_id = @user_id
+            RETURNING id";
         if (con == null)
         {
             con = new NpgsqlConnection(_connectionString);
         }
-        long result = await con.QuerySingleAsync<long>(query, new { user_id }, transaction);
+        long result = await con.QueryFirstOrDefaultAsync<long>(query, new { user_id }, transaction);
         return result;
+    }
+    private async Task<bool> ProductExistsAsync(
+        long productId,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction)
+    {
+        return await connection.ExecuteScalarAsync<bool>(
+            """
+            SELECT EXISTS(
+                SELECT 1
+                FROM products
+                WHERE id = @productId
+            );
+            """,
+            new { productId },
+            transaction);
+    }
+    private async Task<CartItem?> GetCartItemByProductIdAsync(
+        long cartId,
+        long productId,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction
+    )
+    {
+        return await connection.QueryFirstOrDefaultAsync<CartItem>(
+            """
+            SELECT
+                id,
+                cart_id AS CartId,
+                product_id AS ProductId,
+                quantity
+            FROM cart_items
+            WHERE cart_id = @cartId
+              AND product_id = @productId;
+            """,
+            new { cartId, productId },
+            transaction
+        );
     }
 
     private async Task<CartItem?> GetCartItemByProductIdAsync(
@@ -161,7 +198,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
 
         try
         {
-            ShoppingCart? cart = await GetCartByCustomerIdAsync(userId, connection, transaction);
+            ShoppingCart? cart = await GetCartByUserIdAsync(userId, connection, transaction);
 
             long cartId;
 
@@ -175,6 +212,11 @@ public class ShoppingCartRepository : IShoppingCartRepository
             }
 
             item.CartId = cartId;
+            if (!await ProductExistsAsync(item.ProductId, connection, transaction))
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
 
             CartItem? existingItem = await GetCartItemByProductIdAsync(
                 cartId,
@@ -272,8 +314,8 @@ public class ShoppingCartRepository : IShoppingCartRepository
         await using NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
         string query = """
             DELETE FROM cart_items AS ci 
-            USING shopping_carts AS sc
-            JOIN customers AS c ON sc.customer_id = c.id
+            USING shopping_carts AS sc  
+            JOIN customers AS c ON sc.customer_id = c.id  
             JOIN users AS u ON c.user_id=u.id
             WHERE sc.id = ci.cart_id  AND ci.id = @Id AND (u.id =@Userid OR u.role = 'Admin');
             """;

@@ -1,4 +1,5 @@
 using Backend.DTOs;
+using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,10 +50,7 @@ public sealed class ProductsController : ControllerBase
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ProductDto>> GetProductById(
-        int id,
-        CancellationToken cancellationToken
-    )
+    public async Task<ActionResult<ProductDto>> GetProductById(int id, CancellationToken cancellationToken)
     {
         var product = await _productService.GetProductByIdAsync(id, cancellationToken);
         if (product is null)
@@ -62,5 +60,20 @@ public sealed class ProductsController : ControllerBase
         }
 
         return Ok(product);
+    }
+
+    // POST /api/products to add a new product.
+    [HttpPost]
+    [ProducesResponseType(typeof(Product), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<Product>> CreateProduct([FromBody] Product product, CancellationToken cancellationToken)
+    {
+        var createdProduct = await _productService.CreateProductAsync(product, cancellationToken);
+        if (createdProduct is null)
+        {
+            return BadRequest("Product moet een geldige naam en prijs hebben.");
+        }
+
+        return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, createdProduct);
     }
 }

@@ -149,6 +149,36 @@ public class ProductRepository
         return MapProduct(reader, ordinals);
     }
 
+    public async Task<Product> CreateProductAsync(Product product, CancellationToken cancellationToken = default)
+    {
+        const string sql = @"INSERT INTO products (name, description, price, category_id, subcategory_id)
+                             VALUES (@name, @description, @price, @categoryId, @subcategoryId)
+                             RETURNING id,
+                                       name,
+                                       description,
+                                       price,
+                                       category_id,
+                                       subcategory_id,
+                                       NULL::text AS category_name,
+                                       NULL::text AS subcategory_name";
+
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue("name", product.Name);
+        command.Parameters.AddWithValue("description", (object?)product.Description ?? DBNull.Value);
+        command.Parameters.AddWithValue("price", product.Price);
+        command.Parameters.AddWithValue("categoryId", (object?)product.CategoryId ?? DBNull.Value);
+        command.Parameters.AddWithValue("subcategoryId", (object?)product.SubcategoryId ?? DBNull.Value);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await reader.ReadAsync(cancellationToken);
+
+        var ordinals = GetOrdinals(reader);
+        return MapProduct(reader, ordinals);
+    }
+
     private static ProductOrdinals GetOrdinals(NpgsqlDataReader reader)
     {
         return new ProductOrdinals(

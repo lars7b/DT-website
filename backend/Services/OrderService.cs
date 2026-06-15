@@ -46,7 +46,7 @@ public class OrderService : IOrderService
                         ProductDescription = item.Product?.Description,
                     })
                     .ToList() ?? new List<OrderItemDto>(),
-            // only by id has this bc frontend only shows it in detail page
+            // only get by id method has history bc frontend only shows it in detail page for now
             StatusHistory = history
                 ?.Select(h => new OrderStatusHistoryDto
                 {

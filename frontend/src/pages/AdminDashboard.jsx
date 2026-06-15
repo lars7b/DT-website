@@ -18,6 +18,10 @@ export default function AdminDashboard() {
   const [employeeForm, setEmployeeForm] = useState({email: '', password: '', firstName: '', lastName: '', phone: '', position: ''});
   const [createStatus, setCreateStatus] = useState({ message: "", error: "" });
 
+  const [editingOrderId, setEditingOrderId] = useState(null);
+  const [editStatusValue, setEditStatusValue] = useState("");
+  const [updateMessage, setUpdateMessage] = useState({ id: null, text: "", type: "" });
+
   const baseUrl = import.meta.env.VITE_API_URL;
 
   const tabTitles = {
@@ -73,6 +77,34 @@ export default function AdminDashboard() {
       } catch (err) {
         setCreateStatus({ message: "", error: err.message });
       }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, originalOrder) => {
+    try {
+      const res = await fetch(`${baseUrl}/admin/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+
+        body: JSON.stringify({ ...originalOrder, status: editStatusValue })
+      });
+
+      if (!res.ok) throw new Error('Kon status niet updaten');
+
+      setCustomerOrders(prev => 
+        prev.map(o => o.id === orderId ? { ...o, status: editStatusValue } : o)
+      );
+      
+      setUpdateMessage({ id: orderId, text: "Status succesvol bijgewerkt!", type: "success" });
+      setEditingOrderId(null);
+
+      setTimeout(() => setUpdateMessage({ id: null, text: "", type: "" }), 3000);
+      
+    } catch (err) {
+      setUpdateMessage({ id: orderId, text: err.message, type: "error" });
+    }
   };
 
   return (
@@ -294,11 +326,65 @@ export default function AdminDashboard() {
                             {customerOrders.map(order => (
                               <tr key={order.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                                 <td className="p-2 font-medium">#{order.id}</td>
-                                <td className="p-2 text-gray-600">{new Date(order.orderDate).toLocaleDateString('nl-NL')}</td>
+                                <td className="p-2 text-gray-600">
+                                  {new Date(order.orderDate).toLocaleDateString('nl-NL')}
+                                </td>
                                 <td className="p-2">
-                                  <span className="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">
-                                    {order.status}
-                                  </span>
+                                  {/* ALS we deze order bewerken: Toon Dropdown */}
+                                  {editingOrderId === order.id ? (
+                                    <div className="flex items-center gap-2">
+                                      <select
+                                        value={editStatusValue}
+                                        onChange={(e) => setEditStatusValue(e.target.value)}
+                                        className="border border-gray-300 rounded p-1 text-xs outline-none"
+                                      >
+                                        <option value="Pending">Pending</option>
+                                        <option value="Processing">Processing</option>
+                                        <option value="Shipped">Shipped</option>
+                                        <option value="Delivered">Delivered</option>
+                                        <option value="Refunded">Refunded</option>
+                                      </select>
+                                      <button 
+                                        onClick={() => handleUpdateOrderStatus(order.id, order)} 
+                                        className="text-white bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs font-bold transition"
+                                      >
+                                        Opslaan
+                                      </button>
+                                      <button 
+                                        onClick={() => setEditingOrderId(null)} 
+                                        className="text-gray-500 hover:text-gray-800 text-xs underline"
+                                      >
+                                        Annuleren
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    /* ALS we NIET bewerken: Toon normale badge + Edit knop */
+                                    <div className="flex items-center gap-3">
+                                      <span className="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">
+                                        {order.status || 'Pending'}
+                                      </span>
+                                      
+                                      {/* Alleen Admins mogen de status aanpassen */}
+                                      {role === 'Admin' && (
+                                        <button
+                                          onClick={() => {
+                                            setEditingOrderId(order.id);
+                                            setEditStatusValue(order.status || 'Pending');
+                                          }}
+                                          className="text-gray-400 hover:text-blue-600 text-xs underline"
+                                        >
+                                          Wijzig Status
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Toon eventuele succes/foutmeldingen voor deze specifieke order */}
+                                  {updateMessage.id === order.id && (
+                                    <div className={`text-xs mt-1 font-medium ${updateMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                                      {updateMessage.text}
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ))}
