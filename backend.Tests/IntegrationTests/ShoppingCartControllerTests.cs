@@ -38,7 +38,8 @@ public class ShoppingCartControllerTests
     public async Task GetShoppingCart_ShouldReturn200Ok_WhenUserHasCart()
     {
         // ARRANGE
-        // No setup needed for authenticated client
+        var item = new CartItemDto { ProductId = 1, Quantity = 2 };
+        await _unauthenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", item);
 
         // ACT
         var response = await _authenticatedClient.GetAsync("/api/shoppingcart");
@@ -108,7 +109,10 @@ public class ShoppingCartControllerTests
     public async Task AddItemToShoppingCart_ShouldReturn400BadRequest_WhenItemIsNull()
     {
         // ACT
-        var response = await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items",(CartItemDto)null);
+        var response = await _authenticatedClient.PostAsJsonAsync(
+            "/api/shoppingcart/items",
+            (CartItemDto)null
+        );
 
         // ASSERT
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -126,8 +130,6 @@ public class ShoppingCartControllerTests
 
         // ASSERT
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-
-
     }
 
     [Fact]
@@ -224,7 +226,9 @@ public class ShoppingCartControllerTests
 
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
-        var items = await _authenticatedClient.GetFromJsonAsync<ShoppingCartDto>("/api/shoppingcart");
+        var items = await _authenticatedClient.GetFromJsonAsync<ShoppingCartDto>(
+            "/api/shoppingcart"
+        );
 
         var item = items.Items.Single(x => x.ProductId == 1);
 
@@ -244,6 +248,15 @@ public class ShoppingCartControllerTests
     [Fact]
     public async Task DeleteShoppingCart_ShouldReturn204NoContent_WhenCartDeletedSuccessfully()
     {
+        // ARRANGE
+        var Item = new CartItemDto
+        {
+            Id = 1,
+            ProductId = 1,
+            Quantity = 20,
+        };
+        await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", Item);
+
         // ACT
         var response = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
 
@@ -326,6 +339,8 @@ public class ShoppingCartControllerTests
     [Fact]
     public async Task GetShoppingCart_ShouldReturn404_WhenServiceReturnsNull()
     {
+        var itemToAdd = new CartItemDto { ProductId = 1, Quantity = 2 };
+        await _authenticatedClient.PostAsJsonAsync("/api/shoppingcart/items", itemToAdd);
         var response = await _authenticatedClient.GetAsync( // GetFromJsonAsync
             "/api/shoppingcart"
         );
@@ -387,9 +402,9 @@ public class ShoppingCartControllerTests
     [Fact]
     public async Task DeleteShoppingCart_ShouldReturn404_WhenCartDontExists()
     {
-        var firstresponse = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
-        Assert.Equal(HttpStatusCode.NoContent, firstresponse.StatusCode);
-        // the second response the cart will already be deleted so it should return
+        // ensure cart is deleted
+        await _authenticatedClient.DeleteAsync("/api/shoppingcart");
+        // the second response the cart will already be deleted so it should return badrequest
         var response = await _authenticatedClient.DeleteAsync("/api/shoppingcart");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
